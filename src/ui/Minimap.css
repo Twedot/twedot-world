@@ -1,0 +1,16 @@
+.minimap-wrap {
+  position: absolute;
+  bottom: 16px;
+  left: 16px;
+  pointer-events: none;
+  border-radius: 10px;
+  overflow: hidden;
+  border: 2px solid rgba(255,255,255,0.22);
+  box-shadow: 0 4px 14px rgba(0,0,0,0.4);
+}
+
+.minimap-canvas {
+  display: block;
+  width: 140px;
+  height: 140px;
+}

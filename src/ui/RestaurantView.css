@@ -1,0 +1,457 @@
+
+.rv-unclaimed-banner {
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0,0,0,0.78);
+  color: rgba(255,255,255,0.85);
+  font-size: 13px;
+  font-weight: 600;
+  padding: 9px 18px;
+  border-radius: 20px;
+  backdrop-filter: blur(8px);
+  white-space: nowrap;
+  z-index: 30;
+}
+
+/* ── Toast notification ─────────────────────────────── */
+.rv-toast {
+  position: fixed;
+  bottom: 90px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0,0,0,0.85);
+  color: #fff;
+  padding: 10px 20px;
+  border-radius: 20px;
+  font-size: 13px;
+  z-index: 9999;
+  pointer-events: none;
+  white-space: nowrap;
+  backdrop-filter: blur(8px);
+}
+
+/* ── Menu strip cards ───────────────────────────────── */
+.rv-menu-card {
+  min-width: 120px;
+  max-width: 140px;
+  flex-shrink: 0;
+  background: rgba(255,255,255,0.07);
+  border-radius: 10px;
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  border: 1px solid rgba(255,255,255,0.1);
+}
+
+.rv-menu-img {
+  width: 100%;
+  height: 72px;
+  object-fit: cover;
+  border-radius: 7px;
+}
+
+.rv-menu-emoji {
+  width: 100%;
+  height: 72px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 36px;
+  background: rgba(255,255,255,0.05);
+  border-radius: 7px;
+}
+
+.rv-menu-info {
+  flex: 1;
+}
+
+.rv-menu-name {
+  font-size: 11px;
+  font-weight: 600;
+  color: #fff;
+  line-height: 1.3;
+  margin-bottom: 2px;
+}
+
+.rv-menu-price {
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.rv-menu-btn {
+  width: 100%;
+  padding: 5px 0;
+  border: none;
+  border-radius: 6px;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  letter-spacing: 0.3px;
+}
+
+.rv-menu-btn:active {
+  opacity: 0.8;
+}
+
+.rv-menu-loading,
+.rv-menu-empty {
+  min-width: 200px;
+  color: rgba(255,255,255,0.5);
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  padding: 0 8px;
+}
+
+/* ── Order cards (left panel) ───────────────────────── */
+.rv-order-card {
+  display: flex;
+  gap: 8px;
+  padding: 10px;
+  background: rgba(255,255,255,0.06);
+  border-radius: 8px;
+  margin-bottom: 6px;
+  align-items: flex-start;
+}
+
+.rv-order-img {
+  width: 44px;
+  height: 44px;
+  border-radius: 6px;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.rv-order-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.rv-order-item {
+  font-size: 12px;
+  font-weight: 600;
+  color: #fff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.rv-order-buyer,
+.rv-order-price {
+  font-size: 11px;
+  color: rgba(255,255,255,0.6);
+  margin-top: 2px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  flex-wrap: wrap;
+}
+
+.rv-badge {
+  display: inline-block;
+  padding: 1px 6px;
+  border-radius: 10px;
+  font-size: 10px;
+  font-weight: 600;
+  color: #fff;
+  text-transform: capitalize;
+}
+
+.rv-order-actions {
+  display: flex;
+  gap: 5px;
+  margin-top: 6px;
+}
+
+.rv-btn-accept {
+  flex: 1;
+  padding: 4px 0;
+  background: #22c55e;
+  border: none;
+  border-radius: 5px;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.rv-btn-decline {
+  flex: 1;
+  padding: 4px 0;
+  background: #ef4444;
+  border: none;
+  border-radius: 5px;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.rv-btn-cancel {
+  margin-top: 4px;
+  padding: 3px 10px;
+  background: rgba(239,68,68,0.2);
+  border: 1px solid rgba(239,68,68,0.4);
+  border-radius: 5px;
+  color: #ef4444;
+  font-size: 11px;
+  cursor: pointer;
+}
+
+/* ── @mention dropdown ──────────────────────────────── */
+.rv-mention-list {
+  position: absolute;
+  bottom: 100%;
+  left: 0;
+  right: 0;
+  background: #1e1e2e;
+  border: 1px solid rgba(255,255,255,0.15);
+  border-radius: 8px;
+  overflow: hidden;
+  max-height: 160px;
+  overflow-y: auto;
+  z-index: 100;
+}
+
+.ls-chat-bottom {
+  position: relative;
+}
+@media (pointer: coarse) {
+  .ls-chat-bottom { padding-bottom: 68px; }
+}
+
+.rv-mention-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  cursor: pointer;
+  font-size: 13px;
+  color: #fff;
+}
+
+.rv-mention-item:hover {
+  background: rgba(255,255,255,0.1);
+}
+
+.rv-mention-av {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.rv-mention-av-fb {
+  background: rgba(255,255,255,0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+/* ── Feature cards ──────────────────────────────────── */
+.rv-features-strip {
+  border-top: 1px solid rgba(255,255,255,0.04);
+}
+
+.rv-feature-card {
+  min-width: 130px;
+  max-width: 150px;
+  flex-shrink: 0;
+  background: rgba(255,255,255,0.06);
+  border-radius: 12px;
+  padding: 12px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  border: 1px solid rgba(255,255,255,0.1);
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+.rv-feature-card:hover { background: rgba(255,255,255,0.11); border-color: rgba(255,255,255,0.22); }
+.rv-feature-card:active { opacity: 0.8; }
+
+.rv-feature-icon {
+  width: 38px; height: 38px;
+  border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px;
+  flex-shrink: 0;
+}
+
+.rv-feature-title {
+  font-size: 12px;
+  font-weight: 700;
+  color: #fff;
+  line-height: 1.3;
+}
+
+.rv-feature-desc {
+  font-size: 11px;
+  color: rgba(255,255,255,0.5);
+  line-height: 1.4;
+}
+
+.rv-feature-tap {
+  font-size: 11px;
+  font-weight: 600;
+  margin-top: 2px;
+}
+
+/* ── Feature detail bottom sheet ────────────────────── */
+.rv-feat-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.6);
+  backdrop-filter: blur(6px);
+  z-index: 1100;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  animation: rv-fade-in 0.2s ease;
+}
+
+@keyframes rv-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.rv-feat-sheet {
+  width: 100%;
+  max-width: 560px;
+  max-height: 85vh;
+  background: #1a1a27;
+  border-radius: 22px 22px 0 0;
+  padding: 16px 24px 48px;
+  overflow-y: auto;
+  position: relative;
+  animation: rv-sheet-up 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes rv-sheet-up {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+
+.rv-feat-handle {
+  width: 44px; height: 4px;
+  border-radius: 2px;
+  background: rgba(255,255,255,0.18);
+  margin: 0 auto 20px;
+}
+
+.rv-feat-close {
+  position: absolute;
+  top: 16px; right: 16px;
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(255,255,255,0.08);
+  color: #aaa;
+  font-size: 20px;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  line-height: 1;
+}
+.rv-feat-close:hover { background: rgba(255,255,255,0.16); color: #fff; }
+
+.rv-feat-icon-lg {
+  width: 56px; height: 56px;
+  border-radius: 16px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 26px;
+  margin-bottom: 16px;
+}
+
+.rv-feat-title {
+  font-size: 22px;
+  font-weight: 800;
+  color: #fff;
+  margin: 0 0 12px;
+  line-height: 1.3;
+}
+
+.rv-feat-body {
+  font-size: 15px;
+  color: rgba(255,255,255,0.75);
+  line-height: 1.7;
+  margin: 0 0 24px;
+  white-space: pre-wrap;
+}
+
+.rv-feat-link-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 13px 28px;
+  border-radius: 12px;
+  color: #fff;
+  font-size: 15px;
+  font-weight: 700;
+  text-decoration: none;
+  transition: opacity 0.15s;
+}
+.rv-feat-link-btn:hover { opacity: 0.88; }
+
+/* ── Misc ───────────────────────────────────────────── */
+.rv-loading {
+  color: rgba(255,255,255,0.5);
+  font-size: 13px;
+  padding: 12px;
+  text-align: center;
+}
+
+.rv-user-count {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: rgba(255,255,255,0.7);
+  font-size: 12px;
+}
+
+/* ── Expanded info bar (RestaurantView only) ──────────── */
+.rv-info-bar-expanded {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 6px;
+  padding: 10px 16px 12px;
+}
+
+.rv-info-row1 {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.rv-info-row2 {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding-left: 4px;
+}
+
+.rv-info-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11.5px;
+  color: rgba(255,255,255,0.75);
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 20px;
+  padding: 3px 10px;
+  white-space: nowrap;
+}
+
+.rv-info-link {
+  color: #93c5fd;
+  text-decoration: none;
+  cursor: pointer;
+  transition: color 0.15s;
+}
+.rv-info-link:hover { color: #60a5fa; text-decoration: underline; }

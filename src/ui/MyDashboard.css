@@ -1,0 +1,114 @@
+.myd-panel {
+  position: absolute;
+  bottom: 90px;
+  left: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  pointer-events: all;
+  z-index: 20;
+}
+
+.myd-card {
+  background: rgba(255,255,255,0.96);
+  border: 1px solid rgba(0,0,0,0.07);
+  border-radius: 14px;
+  padding: 10px 14px;
+  width: 200px;
+  box-shadow: 0 4px 18px rgba(0,0,0,0.12);
+}
+
+.myd-card-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.myd-icon { font-size: 15px; }
+
+.myd-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: #888;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.myd-card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.myd-user-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.myd-av {
+  width: 30px; height: 30px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+  border: 2px solid #f0f0f0;
+}
+
+.myd-av-init {
+  background: linear-gradient(135deg, #4F7CF7, #7C4DF7);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.myd-name {
+  font-size: 13px;
+  font-weight: 700;
+  color: #111;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.myd-enter-btn {
+  width: 100%;
+  padding: 7px 0;
+  border-radius: 9px;
+  background: #111;
+  color: #fff;
+  border: none;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  letter-spacing: 0.02em;
+  transition: background 0.15s;
+}
+.myd-enter-btn:hover { background: #333; }
+
+.myd-amount {
+  font-size: 18px;
+  font-weight: 800;
+  color: #111;
+  letter-spacing: -0.02em;
+}
+
+.myd-rental-status {
+  font-size: 11px;
+  font-weight: 600;
+}
+.myd-rented    { color: #16a34a; }
+.myd-available { color: #999; }
+
+.myd-wallet-sub {
+  font-size: 11px;
+  color: #aaa;
+}
+
+.myd-loading {
+  font-size: 12px;
+  color: #bbb;
+}

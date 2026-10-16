@@ -1,0 +1,12 @@
+{
+  "name": "twedot-world-server",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "node index.js"
+  },
+  "dependencies": {
+    "ws": "^8.18.0"
+  }
+}

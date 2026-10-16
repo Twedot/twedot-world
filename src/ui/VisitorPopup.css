@@ -1,0 +1,35 @@
+.vp-overlay {
+  position: fixed; inset: 0; z-index: 30;
+  background: rgba(0,0,0,0.5);
+  display: flex; align-items: center; justify-content: center;
+}
+.vp-popup {
+  background: #1E1E24; border-radius: 16px; padding: 24px;
+  width: 340px; max-width: 92vw; position: relative;
+  box-shadow: 0 12px 40px rgba(0,0,0,0.6);
+}
+.vp-close {
+  position: absolute; top: 10px; right: 14px;
+  background: none; border: none; color: #888; font-size: 22px; cursor: pointer;
+}
+.vp-header {
+  display: flex; align-items: center; gap: 14px; margin-bottom: 18px;
+}
+.vp-avatar-circle {
+  width: 50px; height: 50px; border-radius: 50%;
+  background: #333; display: flex; align-items: center; justify-content: center;
+}
+.vp-avatar-circle svg { width: 28px; height: 28px; }
+.vp-name { color: #fff; font-size: 17px; font-weight: 700; }
+.vp-rank { color: #FFD700; font-size: 13px; font-weight: 600; }
+.vp-input-row { display: flex; gap: 8px; }
+.vp-input {
+  flex: 1; background: #2A2A32; border: 1px solid #3A3A44; border-radius: 10px;
+  color: #fff; padding: 10px 14px; font-size: 14px; outline: none;
+}
+.vp-input:focus { border-color: #6C63FF; }
+.vp-send {
+  background: #6C63FF; color: #fff; border: none; border-radius: 10px;
+  padding: 10px 18px; font-weight: 600; font-size: 14px; cursor: pointer;
+}
+.vp-send:disabled { opacity: 0.4; cursor: default; }

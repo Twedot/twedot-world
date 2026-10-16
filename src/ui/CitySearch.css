@@ -1,0 +1,166 @@
+.cs-root {
+  position: absolute;
+  top: 56px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(420px, calc(100vw - 32px));
+  z-index: 120;
+  pointer-events: all;
+}
+
+.cs-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(255, 255, 255, 0.96);
+  border-radius: 24px;
+  padding: 0 14px;
+  height: 42px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.18);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  backdrop-filter: blur(8px);
+}
+
+.cs-icon {
+  width: 17px;
+  height: 17px;
+  color: #888;
+  flex-shrink: 0;
+}
+
+.cs-input {
+  flex: 1;
+  border: none;
+  outline: none;
+  background: transparent;
+  font-size: 14px;
+  color: #111;
+  font-family: inherit;
+}
+.cs-input::placeholder { color: #aaa; }
+
+.cs-clear {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #999;
+  font-size: 18px;
+  line-height: 1;
+  padding: 0 2px;
+  flex-shrink: 0;
+}
+.cs-clear:hover { color: #333; }
+
+.cs-dropdown {
+  margin-top: 6px;
+  background: rgba(255, 255, 255, 0.98);
+  border-radius: 16px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.18);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  overflow: hidden;
+  backdrop-filter: blur(12px);
+}
+
+.cs-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  cursor: pointer;
+  transition: background 0.1s;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+}
+.cs-item:last-child { border-bottom: none; }
+.cs-item:hover,
+.cs-item-active { background: #f4f6ff; }
+
+.cs-item-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: #f0f0f0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  flex-shrink: 0;
+  overflow: hidden;
+}
+
+.cs-item-logo {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.cs-item-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.cs-item-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: #111;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cs-item-meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 2px;
+}
+
+.cs-item-cat {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #6366f1;
+  background: #eef2ff;
+  padding: 1px 6px;
+  border-radius: 20px;
+  flex-shrink: 0;
+}
+
+.cs-item-desc {
+  font-size: 12px;
+  color: #777;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cs-item-arrow {
+  color: #bbb;
+  font-size: 18px;
+  flex-shrink: 0;
+}
+
+.cs-item-product-match {
+  font-size: 11px;
+  color: #059669;
+  background: #ecfdf5;
+  padding: 1px 6px;
+  border-radius: 20px;
+  font-weight: 600;
+}
+
+.cs-empty {
+  padding: 16px 18px;
+  font-size: 13px;
+  color: #888;
+}
+
+.cs-searching {
+  color: #6366f1;
+  animation: cs-pulse 1.2s ease-in-out infinite;
+}
+
+@keyframes cs-pulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.45; }
+}

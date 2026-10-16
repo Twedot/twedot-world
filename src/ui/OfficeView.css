@@ -1,0 +1,34 @@
+.ofv-root {
+  position: fixed; inset: 0; z-index: 900;
+  background: #000;
+}
+.ofv-canvas {
+  width: 100%; height: 100%; display: block;
+}
+.ofv-topbar {
+  position: absolute; top: 0; left: 0; right: 0;
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 14px;
+  background: linear-gradient(180deg, rgba(0,0,0,0.72) 60%, transparent);
+  z-index: 10;
+}
+.ofv-exit {
+  padding: 5px 14px; border-radius: 8px;
+  border: 1px solid rgba(255,255,255,0.25);
+  background: rgba(255,255,255,0.10);
+  color: #fff; font-weight: 700; font-size: 13px;
+  cursor: pointer;
+}
+.ofv-exit:hover { background: rgba(255,255,255,0.22); }
+.ofv-logo {
+  width: 28px; height: 28px; border-radius: 6px; object-fit: contain;
+  background: #fff; padding: 2px;
+}
+.ofv-title {
+  flex: 1; font-weight: 700; font-size: 16px;
+  color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.ofv-badge {
+  padding: 3px 10px; border-radius: 12px;
+  color: #fff; font-size: 11px; font-weight: 700; letter-spacing: 0.5px;
+}
