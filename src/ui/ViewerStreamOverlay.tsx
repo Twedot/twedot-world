@@ -50,6 +50,7 @@ export default function ViewerStreamOverlay({ roomId, onLeave }: Props) {
   const [pendingRequests, setPendingRequests] = useState<{ requestId: string; itemName: string; status: 'pending' | 'accepted' | 'declined' }[]>([])
   const [payProcessing, setPayProcessing] = useState(false)
   const [payError, setPayError] = useState('')
+  const payAbortRef = useRef<AbortController | null>(null)
   const streamApiBase = import.meta.env.VITE_STREAM_API_URL ?? (
     import.meta.env.DEV ? '/stream-api' : 'https://prodapi.twedot.com/stream-api'
   )
@@ -190,10 +191,21 @@ export default function ViewerStreamOverlay({ roomId, onLeave }: Props) {
     }
   }, [messages])
 
+  function cancelPay() {
+    payAbortRef.current?.abort()
+    payAbortRef.current = null
+    setPayProcessing(false)
+    setPayError('')
+  }
+
   async function handlePay() {
     if (!paymentGate || payProcessing) return
     setPayProcessing(true)
     setPayError('')
+
+    const ctrl = new AbortController()
+    payAbortRef.current = ctrl
+    const timeout = setTimeout(() => ctrl.abort(), 30000)
 
     try {
       // Server-side payment init — works on all devices without Paystack domain whitelisting
@@ -201,8 +213,10 @@ export default function ViewerStreamOverlay({ roomId, onLeave }: Props) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
+        signal: ctrl.signal,
         body: JSON.stringify({ roomId: paymentGate.roomId, userId: service.myUserId ?? '' }),
       })
+      clearTimeout(timeout)
       if (!initRes.ok) {
         const errBody = await initRes.json().catch(() => ({}))
         throw new Error((errBody as { error?: string }).error ?? 'Payment service unavailable')
@@ -215,8 +229,10 @@ export default function ViewerStreamOverlay({ roomId, onLeave }: Props) {
       // Redirect to Paystack's hosted checkout — works everywhere
       window.location.href = authorization_url
     } catch (err) {
-      const msg = err instanceof Error ? err.message : 'Could not start payment'
-      setPayError(msg)
+      clearTimeout(timeout)
+      payAbortRef.current = null
+      const isAbort = err instanceof DOMException && err.name === 'AbortError'
+      setPayError(isAbort ? 'Payment timed out — please try again.' : (err instanceof Error ? err.message : 'Could not start payment'))
       setPayProcessing(false)
     }
   }
@@ -242,7 +258,7 @@ export default function ViewerStreamOverlay({ roomId, onLeave }: Props) {
       <div className="vs-root">
         <div className="vs-payment-overlay">
           <div className="vs-payment-modal">
-            <button className="vs-payment-close" onClick={onLeave}>✕</button>
+            <button className="vs-payment-close" onClick={() => { cancelPay(); onLeave() }}>✕</button>
             <div className="vs-payment-live-badge">
               <span className="vs-payment-live-dot" />
               LIVE
@@ -263,7 +279,7 @@ export default function ViewerStreamOverlay({ roomId, onLeave }: Props) {
             <button className="vs-payment-btn" onClick={handlePay} disabled={payProcessing}>
               {payProcessing ? 'Redirecting to payment…' : `Pay ₦${(paymentGate.price / 100).toLocaleString()} & Watch`}
             </button>
-            <button className="vs-payment-cancel" onClick={onLeave}>
+            <button className="vs-payment-cancel" onClick={() => { cancelPay(); onLeave() }}>
               Go Back
             </button>
           </div>

@@ -474,10 +474,11 @@
 .ls-cam-stage-video {
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit: contain;
   display: block;
   transform: scaleX(-1);
   border-radius: 0;
+  background: #000;
 }
 
 /* PIP camera — top-right of center area */
@@ -565,6 +566,9 @@
   padding: 8px 14px;
   z-index: 524;
   flex-shrink: 0;
+  background: rgba(14, 14, 16, 0.92);
+  backdrop-filter: blur(12px);
+  border-top: 1px solid rgba(255,255,255,0.06);
 }
 .ls-ctrl-btn {
   width: 42px; height: 42px;
