@@ -72,6 +72,7 @@ export default function LiveStreamOverlay({ ownerName, ownerAvatar, inventoryIte
   const [camLoading, setCamLoading] = useState(false)
   const [viewMode, setViewMode] = useState<'camera' | 'house'>('camera')
   const [showAllItems, setShowAllItems] = useState(false)
+  const [showShopStrip, setShowShopStrip] = useState(true)
   const [requests, setRequests] = useState<ProductRequest[]>([])
   const previewStreamRef = useRef<MediaStream | null>(null)
   const setupVidRef = useRef<HTMLVideoElement>(null)
@@ -331,17 +332,31 @@ export default function LiveStreamOverlay({ ownerName, ownerAvatar, inventoryIte
   async function toggleLiveCam() {
     if (!camOn) {
       try {
-        const stream = await navigator.mediaDevices.getUserMedia({
-          video: { width: { ideal: 320 }, height: { ideal: 240 }, facingMode: 'user' },
-        })
+        let stream: MediaStream
+        try {
+          stream = await navigator.mediaDevices.getUserMedia({
+            video: { width: { ideal: 640 }, height: { ideal: 480 } },
+          })
+        } catch {
+          stream = await navigator.mediaDevices.getUserMedia({ video: true })
+        }
         previewStreamRef.current = stream
-        await service.publishCameraTrack(stream.getVideoTracks()[0].clone())
+        // Show local preview immediately — don't wait for LiveKit publish
+        if (mainVidRef.current) {
+          mainVidRef.current.srcObject = stream
+          mainVidRef.current.play().catch(() => {})
+        }
+        if (pipVidRef.current) {
+          pipVidRef.current.srcObject = stream
+          pipVidRef.current.play().catch(() => {})
+        }
         setCamOn(true)
+        service.publishCameraTrack(stream.getVideoTracks()[0].clone()).catch(() => {})
       } catch {
         setCamOn(false)
       }
     } else {
-      await service.unpublishCamera()
+      service.unpublishCamera().catch(() => {})
       previewStreamRef.current?.getVideoTracks().forEach(t => t.stop())
       previewStreamRef.current = null
       setCamOn(false)
@@ -711,32 +726,41 @@ export default function LiveStreamOverlay({ ownerName, ownerAvatar, inventoryIte
         </div>
 
         {hasInventory && (
-          <div className="ls-inv-strip">
-            <div className="ls-inv-header">
-              <span className="ls-inv-title">Shop</span>
-              <button className="ls-inv-see-all" onClick={() => setShowAllItems(true)}>
-                See All ({inventoryItems.length})
-              </button>
-            </div>
-            <div className="ls-inv-scroll">
-              {previewItems.map(item => (
-                <div key={item.id} className="ls-inv-card" onClick={() => setShowAllItems(true)}>
-                  <div className="ls-inv-img">
-                    {item.img ? <img src={item.img} alt="" /> : '📦'}
-                  </div>
-                  <div className="ls-inv-info">
-                    <div className="ls-inv-name">{item.name}</div>
-                    <div className="ls-inv-price">{item.price}</div>
-                  </div>
+          showShopStrip ? (
+            <div className="ls-inv-strip">
+              <div className="ls-inv-header">
+                <span className="ls-inv-title">Shop</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <button className="ls-inv-see-all" onClick={() => setShowAllItems(true)}>
+                    See All ({inventoryItems.length})
+                  </button>
+                  <button className="ls-inv-collapse-btn" onClick={() => setShowShopStrip(false)} title="Hide shop">▼</button>
                 </div>
-              ))}
-              {inventoryItems.length > 3 && (
-                <button className="ls-inv-more-card" onClick={() => setShowAllItems(true)}>
-                  +{inventoryItems.length - 3} more
-                </button>
-              )}
+              </div>
+              <div className="ls-inv-scroll">
+                {previewItems.map(item => (
+                  <div key={item.id} className="ls-inv-card" onClick={() => setShowAllItems(true)}>
+                    <div className="ls-inv-img">
+                      {item.img ? <img src={item.img} alt="" /> : '📦'}
+                    </div>
+                    <div className="ls-inv-info">
+                      <div className="ls-inv-name">{item.name}</div>
+                      <div className="ls-inv-price">{item.price}</div>
+                    </div>
+                  </div>
+                ))}
+                {inventoryItems.length > 3 && (
+                  <button className="ls-inv-more-card" onClick={() => setShowAllItems(true)}>
+                    +{inventoryItems.length - 3} more
+                  </button>
+                )}
+              </div>
             </div>
-          </div>
+          ) : (
+            <button className="ls-inv-show-btn" onClick={() => setShowShopStrip(true)}>
+              🛍 Shop ({inventoryItems.length}) ▲
+            </button>
+          )
         )}
 
         <div className="ls-info-bar">
