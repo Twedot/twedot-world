@@ -64,6 +64,7 @@ export default function ViewerStreamOverlay({ roomId, onLeave }: Props) {
   const [showShop, setShowShop] = useState(false)
   const [pendingRequests, setPendingRequests] = useState<{ requestId: string; itemName: string; status: 'pending' | 'accepted' | 'declined' }[]>([])
   const [payProcessing, setPayProcessing] = useState(false)
+  const [payError, setPayError] = useState('')
   const streamApiBase = import.meta.env.VITE_STREAM_API_URL ?? (
     import.meta.env.DEV ? '/stream-api' : 'https://prodapi.twedot.com/stream-api'
   )
@@ -189,27 +190,24 @@ export default function ViewerStreamOverlay({ roomId, onLeave }: Props) {
   async function handlePay() {
     if (!paymentGate || payProcessing) return
     setPayProcessing(true)
+    setPayError('')
 
     try {
-      // Load Paystack inline SDK if not already present
       if (!window.PaystackPop) {
         await new Promise<void>((resolve, reject) => {
           const s = document.createElement('script')
           s.src = 'https://js.paystack.co/v1/inline.js'
           s.onload = () => resolve()
-          s.onerror = () => reject(new Error('Failed to load Paystack'))
+          s.onerror = () => reject(new Error('Failed to load payment SDK'))
           document.head.appendChild(s)
         })
       }
 
-      // Fetch public key from stream service
       const pkRes = await fetch(`${streamApiBase}/payments/public-key`)
-      if (!pkRes.ok) throw new Error('Could not get payment config')
+      if (!pkRes.ok) throw new Error('Payment service unavailable — try again shortly')
       const { key: publicKey } = await pkRes.json()
+      if (!publicKey) throw new Error('Payment not configured for this stream')
 
-      if (!publicKey) throw new Error('Payment not configured')
-
-      // Use viewer's userId-derived email (Paystack requires email for receipts)
       const email = `user${(service.myUserId ?? 'guest').slice(-8)}@twedot.pay`
       const reference = `tw_stream_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`
 
@@ -220,7 +218,6 @@ export default function ViewerStreamOverlay({ roomId, onLeave }: Props) {
         ref: reference,
         currency: 'NGN',
         callback: async ({ reference: ref }) => {
-          // Verify payment on stream service backend → marks user as paid in Redis
           try {
             const verifyRes = await fetch(`${streamApiBase}/payments/verify`, {
               method: 'POST',
@@ -232,13 +229,15 @@ export default function ViewerStreamOverlay({ roomId, onLeave }: Props) {
                 userId: service.myUserId ?? '',
               }),
             })
-            if (!verifyRes.ok) throw new Error('verify failed')
-            // Now retry joining — server will allow us through
+            if (!verifyRes.ok) {
+              const errBody = await verifyRes.json().catch(() => ({}))
+              throw new Error((errBody as { error?: string }).error ?? 'Verification failed')
+            }
             setState('connecting')
             service.joinStream(paymentGate.roomId)
-          } catch {
-            addMsg({ user: '', color: '', text: 'Payment verification failed — please try again', system: true })
-          } finally {
+          } catch (err) {
+            const msg = err instanceof Error ? err.message : 'Payment verification failed'
+            setPayError(msg)
             setPayProcessing(false)
           }
         },
@@ -247,9 +246,10 @@ export default function ViewerStreamOverlay({ roomId, onLeave }: Props) {
         },
       })
       handler.openIframe()
-    } catch {
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Could not open payment'
+      setPayError(msg)
       setPayProcessing(false)
-      addMsg({ user: '', color: '', text: 'Could not open payment — please try again', system: true })
     }
   }
 
@@ -282,6 +282,9 @@ export default function ViewerStreamOverlay({ roomId, onLeave }: Props) {
             <div className="vs-payment-desc">
               This is a premium stream. Pay to unlock access — you can leave and rejoin anytime with the same session.
             </div>
+            {payError && (
+              <div className="vs-payment-error">{payError}</div>
+            )}
             <button className="vs-payment-btn" onClick={handlePay} disabled={payProcessing}>
               {payProcessing ? 'Processing…' : `Pay ₦${(paymentGate.price / 100).toLocaleString()} & Watch`}
             </button>
