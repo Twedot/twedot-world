@@ -5,21 +5,6 @@ import { followUser, unfollowUser, getUserProfile, getPublicSellerInventory, cre
 import type { InventoryItem } from '../api/twedotApi'
 import './ViewerStreamOverlay.css'
 
-declare global {
-  interface Window {
-    PaystackPop?: {
-      setup(opts: {
-        key: string
-        email: string
-        amount: number
-        ref: string
-        currency?: string
-        callback: (resp: { reference: string }) => void
-        onClose: () => void
-      }): { openIframe(): void }
-    }
-  }
-}
 
 interface Props {
   roomId: string
@@ -115,7 +100,25 @@ export default function ViewerStreamOverlay({ roomId, onLeave }: Props) {
           getPublicSellerInventory(info.hostId, 1, 30).then(({ items }) => setShopItems(items)).catch(() => {})
         }
       },
-      onPaymentRequired: (gate: PaymentGate) => {
+      onPaymentRequired: async (gate: PaymentGate) => {
+        // Auto-verify if returning from a Paystack redirect (reference stored before redirect)
+        try {
+          const ref = sessionStorage.getItem(`twpay_${gate.roomId}`)
+          if (ref) {
+            sessionStorage.removeItem(`twpay_${gate.roomId}`)
+            const verifyRes = await fetch(`${streamApiBase}/payments/verify`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              credentials: 'include',
+              body: JSON.stringify({ reference: ref, roomId: gate.roomId, userId: service.myUserId ?? '' }),
+            })
+            if (verifyRes.ok) {
+              setState('connecting')
+              service.joinStream(gate.roomId)
+              return
+            }
+          }
+        } catch { /* fall through to payment modal */ }
         setPaymentGate(gate)
         setStreamerName(gate.hostName)
         setStreamTitle(gate.title)
@@ -193,61 +196,26 @@ export default function ViewerStreamOverlay({ roomId, onLeave }: Props) {
     setPayError('')
 
     try {
-      if (!window.PaystackPop) {
-        await new Promise<void>((resolve, reject) => {
-          const s = document.createElement('script')
-          s.src = 'https://js.paystack.co/v1/inline.js'
-          s.onload = () => resolve()
-          s.onerror = () => reject(new Error('Failed to load payment SDK'))
-          document.head.appendChild(s)
-        })
-      }
-
-      const pkRes = await fetch(`${streamApiBase}/payments/public-key`)
-      if (!pkRes.ok) throw new Error('Payment service unavailable — try again shortly')
-      const { key: publicKey } = await pkRes.json()
-      if (!publicKey) throw new Error('Payment not configured for this stream')
-
-      const email = `user${(service.myUserId ?? 'guest').slice(-8)}@twedot.pay`
-      const reference = `tw_stream_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`
-
-      const handler = window.PaystackPop!.setup({
-        key: publicKey,
-        email,
-        amount: paymentGate.price,
-        ref: reference,
-        currency: 'NGN',
-        callback: async ({ reference: ref }) => {
-          try {
-            const verifyRes = await fetch(`${streamApiBase}/payments/verify`, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              credentials: 'include',
-              body: JSON.stringify({
-                reference: ref,
-                roomId: paymentGate.roomId,
-                userId: service.myUserId ?? '',
-              }),
-            })
-            if (!verifyRes.ok) {
-              const errBody = await verifyRes.json().catch(() => ({}))
-              throw new Error((errBody as { error?: string }).error ?? 'Verification failed')
-            }
-            setState('connecting')
-            service.joinStream(paymentGate.roomId)
-          } catch (err) {
-            const msg = err instanceof Error ? err.message : 'Payment verification failed'
-            setPayError(msg)
-            setPayProcessing(false)
-          }
-        },
-        onClose: () => {
-          setPayProcessing(false)
-        },
+      // Server-side payment init — works on all devices without Paystack domain whitelisting
+      const initRes = await fetch(`${streamApiBase}/payments/initialize`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ roomId: paymentGate.roomId, userId: service.myUserId ?? '' }),
       })
-      handler.openIframe()
+      if (!initRes.ok) {
+        const errBody = await initRes.json().catch(() => ({}))
+        throw new Error((errBody as { error?: string }).error ?? 'Payment service unavailable')
+      }
+      const { authorization_url, reference } = await initRes.json() as { authorization_url: string; reference: string }
+
+      // Persist reference so we can auto-verify when Paystack redirects back
+      try { sessionStorage.setItem(`twpay_${paymentGate.roomId}`, reference) } catch { /* private mode */ }
+
+      // Redirect to Paystack's hosted checkout — works everywhere
+      window.location.href = authorization_url
     } catch (err) {
-      const msg = err instanceof Error ? err.message : 'Could not open payment'
+      const msg = err instanceof Error ? err.message : 'Could not start payment'
       setPayError(msg)
       setPayProcessing(false)
     }
@@ -269,24 +237,31 @@ export default function ViewerStreamOverlay({ roomId, onLeave }: Props) {
 
   // ── Payment gate ──────────────────────────────────────
   if (state === 'payment' && paymentGate) {
+    const initial = paymentGate.hostName?.[0]?.toUpperCase() ?? '?'
     return (
       <div className="vs-root">
         <div className="vs-payment-overlay">
           <div className="vs-payment-modal">
-            <button className="vs-payment-close" onClick={onLeave}>x</button>
-            <div className="vs-payment-icon">💎</div>
-            <div className="vs-payment-title">Paid Stream</div>
+            <button className="vs-payment-close" onClick={onLeave}>✕</button>
+            <div className="vs-payment-live-badge">
+              <span className="vs-payment-live-dot" />
+              LIVE
+            </div>
+            {streamerAvatar
+              ? <img className="vs-payment-avatar" src={streamerAvatar} alt="" />
+              : <div className="vs-payment-avatar-fb">{initial}</div>
+            }
             <div className="vs-payment-streamer">{paymentGate.hostName}</div>
-            <div className="vs-payment-stream-title">"{paymentGate.title}"</div>
+            <div className="vs-payment-stream-title">{paymentGate.title}</div>
             <div className="vs-payment-price">₦{(paymentGate.price / 100).toLocaleString('en-NG')}</div>
             <div className="vs-payment-desc">
-              This is a premium stream. Pay to unlock access — you can leave and rejoin anytime with the same session.
+              Premium stream — pay once and rejoin anytime with the same device.
             </div>
             {payError && (
               <div className="vs-payment-error">{payError}</div>
             )}
             <button className="vs-payment-btn" onClick={handlePay} disabled={payProcessing}>
-              {payProcessing ? 'Processing…' : `Pay ₦${(paymentGate.price / 100).toLocaleString()} & Watch`}
+              {payProcessing ? 'Redirecting to payment…' : `Pay ₦${(paymentGate.price / 100).toLocaleString()} & Watch`}
             </button>
             <button className="vs-payment-cancel" onClick={onLeave}>
               Go Back
