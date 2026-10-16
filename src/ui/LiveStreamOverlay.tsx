@@ -488,13 +488,13 @@ export default function LiveStreamOverlay({ ownerName, ownerAvatar, inventoryIte
               />
               <span className="ls-price-hint">
                 {price && parseFloat(price) > 0
-                  ? `Viewers pay ₦${parseFloat(price).toLocaleString('en-NG')} via Paystack to join`
-                  : 'Free — anyone can watch'}
+                  ? `Viewers pay ₦${parseFloat(price).toLocaleString('en-NG')} to join`
+                  : 'Enter price for paid access'}
               </span>
             </div>
             {price && parseFloat(price) > 0 && (
               <div className="ls-price-info">
-                💳 Paid stream — viewers will be shown a Paystack payment screen before they can watch. They can rejoin anytime with the same session.
+                💳 Paid stream — viewers complete payment before they can watch. They can rejoin anytime with the same session.
               </div>
             )}
           </div>
