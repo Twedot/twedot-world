@@ -348,7 +348,7 @@ export default function ViewerStreamOverlay({ roomId, onLeave }: Props) {
           <button
             className="vs-share-btn"
             onClick={(e) => {
-              const url = `https://prodapi.twedot.com/live/${roomId}`
+              const url = `https://twedot.com/live/${roomId}`
               navigator.clipboard.writeText(url).catch(() => {})
               const btn = e.currentTarget as HTMLButtonElement
               btn.textContent = 'Copied!'; setTimeout(() => { btn.textContent = '🔗 Share' }, 2000)

@@ -690,7 +690,7 @@ export default function LiveStreamOverlay({ ownerName, ownerAvatar, inventoryIte
             onClick={(e) => {
               const id = service.activeStreamId
               if (!id) return
-              const url = `https://prodapi.twedot.com/live/${id}`
+              const url = `https://twedot.com/live/${id}`
               navigator.clipboard.writeText(url).catch(() => {})
               const btn = e.currentTarget as HTMLButtonElement
               btn.textContent = 'Copied!'; setTimeout(() => { btn.textContent = '🔗 Share' }, 2000)
