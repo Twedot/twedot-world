@@ -93,15 +93,17 @@ export default function LiveStreamOverlay({ ownerName, ownerAvatar, inventoryIte
     setCamLoading(true)
     setCamError(null)
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: { width: { ideal: 640 }, height: { ideal: 480 }, facingMode: 'user' },
-        audio: {
-          echoCancellation: true,
-          noiseSuppression: true,
-          autoGainControl: true,
-          channelCount: 1,
-        },
-      })
+      let stream: MediaStream
+      try {
+        // First attempt: full constraints
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: { width: { ideal: 640 }, height: { ideal: 480 } },
+          audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true, channelCount: 1 },
+        })
+      } catch {
+        // Fallback: bare camera + mic with no constraints
+        stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true })
+      }
       previewStreamRef.current = stream
       setCamOn(true)
       setMicOn(true)
@@ -109,8 +111,17 @@ export default function LiveStreamOverlay({ ownerName, ownerAvatar, inventoryIte
         setupVidRef.current.srcObject = stream
         setupVidRef.current.play().catch(() => {})
       }
-    } catch {
-      setCamError('Camera access denied. Check browser permissions.')
+    } catch (err) {
+      const e = err as DOMException
+      if (e.name === 'NotAllowedError' || e.name === 'PermissionDeniedError') {
+        setCamError('Camera permission denied — allow camera access in your browser settings.')
+      } else if (e.name === 'NotReadableError' || e.name === 'TrackStartError') {
+        setCamError('Camera is in use by another app — close other tabs or apps using the camera.')
+      } else if (e.name === 'NotFoundError') {
+        setCamError('No camera found — make sure a camera is connected.')
+      } else {
+        setCamError(`Camera error: ${e.message || e.name || 'unknown'}`)
+      }
     } finally {
       setCamLoading(false)
     }
