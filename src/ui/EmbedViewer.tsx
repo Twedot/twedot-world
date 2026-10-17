@@ -1,27 +1,20 @@
 /**
- * Minimal LiveKit viewer rendered inside an <iframe> in the Twedot web feed.
- * Shows the live video full-width with a compact header. No house, no canvas.
+ * Minimal LiveKit viewer for <iframe> embedding in the Twedot web feed.
  * Loaded via world.twedot.com/?stream=ROOM_ID&embed=1
+ * Uses the same service.joinStream() + event-handler pattern as ViewerStreamOverlay.
  */
 import { useEffect, useRef, useState, useCallback } from 'react'
 import { useLive } from '../live/LiveContext'
+import type { PaymentGate, JoinedInfo, ChatMessage } from '../live/LiveContext'
 
 const STREAM_API = import.meta.env.VITE_STREAM_API_URL ?? (
   import.meta.env.DEV ? '/stream-api' : 'https://prodapi.twedot.com/stream-api'
 )
 
-interface JoinResponse {
-  token: string
-  livekitUrl: string
-  hostId?: string
-  hostName?: string
-  title?: string
-  viewers?: number
-}
+interface ChatMsg { id: number; user: string; color: string; text: string }
+let _msgId = 0
 
-interface Props {
-  roomId: string
-}
+interface Props { roomId: string }
 
 export default function EmbedViewer({ roomId }: Props) {
   const { service } = useLive()
@@ -29,133 +22,151 @@ export default function EmbedViewer({ roomId }: Props) {
   const cameraRef = useRef<HTMLVideoElement>(null)
   const audioRef  = useRef<HTMLAudioElement>(null)
 
-  const [phase,       setPhase]       = useState<'connecting' | 'payment' | 'live' | 'ended'>('connecting')
-  const [hostName,    setHostName]    = useState('')
-  const [title,       setTitle]       = useState('')
-  const [viewers,     setViewers]     = useState(0)
-  const [priceKobo,   setPriceKobo]   = useState(0)
-  const [payUrl,      setPayUrl]      = useState('')
-  const [hasCam,      setHasCam]      = useState(false)
-  const [viewMode,    setViewMode]    = useState<'house' | 'camera'>('house')
+  const [phase,     setPhase]     = useState<'connecting' | 'payment' | 'live' | 'ended'>('connecting')
+  const [hostName,  setHostName]  = useState('')
+  const [viewers,   setViewers]   = useState(0)
+  const [title,     setTitle]     = useState('')
+  const [hasCam,    setHasCam]    = useState(false)
+  const [viewMode,  setViewMode]  = useState<'house' | 'camera'>('house')
+  const [payGate,   setPayGate]   = useState<PaymentGate | null>(null)
+  const [messages,  setMessages]  = useState<ChatMsg[]>([])
 
-  const join = useCallback(async () => {
-    try {
-      // Use guest session id so cross-origin redirect survives
-      let sessionId: string | null = null
-      try { sessionId = localStorage.getItem('tw_stream_session') } catch {}
-      const headers: Record<string, string> = { 'Content-Type': 'application/json' }
-      if (sessionId) headers['X-Guest-Session'] = sessionId
+  const addMsg = useCallback((msg: Omit<ChatMsg, 'id'>) => {
+    setMessages(prev => [...prev.slice(-30), { ...msg, id: ++_msgId }])
+  }, [])
 
-      const res = await fetch(`${STREAM_API}/streams/${encodeURIComponent(roomId)}/join`, {
-        method: 'POST',
-        credentials: 'include',
-        headers,
-        body: JSON.stringify({ sessionId }),
-      })
-      const data: Record<string, unknown> = await res.json()
-
-      if (data.requiresPayment) {
-        setPriceKobo((data.priceKobo as number) || 0)
-        setHostName((data.hostName as string) || '')
-        setPayUrl((data.paymentUrl as string) || '')
-        setPhase('payment')
-        return
-      }
-
-      if (!data.token) { setPhase('ended'); return }
-
-      const info = data as unknown as JoinResponse
-      setHostName(info.hostName || '')
-      setTitle(info.title || '')
-      setViewers(info.viewers || 0)
-
-      setPhase('live')
-      // Give React a tick to mount video elements
-      await new Promise(r => setTimeout(r, 80))
-      service.setMediaElements(screenRef.current, cameraRef.current, audioRef.current)
-      await service.connectRoom(info.token, info.livekitUrl)
-    } catch {
-      setPhase('ended')
-    }
-  }, [roomId, service])
-
-  useEffect(() => {
-    join()
-    return () => { service.disconnectRoom().catch(() => {}) }
-  }, [join, service])
-
-  // Track camera availability from the service
+  // Track camera video availability
   useEffect(() => {
     const iv = setInterval(() => {
-      // probe if camera ref has a src
-      if (cameraRef.current?.srcObject || (cameraRef.current?.src && cameraRef.current.src !== window.location.href)) {
+      const cam = cameraRef.current
+      if (cam && (cam.srcObject || (cam.src && cam.src !== window.location.href && cam.readyState > 0))) {
         setHasCam(true)
       }
-    }, 1000)
+    }, 800)
     return () => clearInterval(iv)
   }, [])
 
-  // ── Payment gate ────────────────────────────────────────────────
-  if (phase === 'payment') {
+  useEffect(() => {
+    service.on({
+      onJoined: async (info: JoinedInfo) => {
+        setHostName(info.hostName)
+        setTitle(info.title)
+        setViewers(info.viewers)
+        setPhase('live')
+        // Give React a tick to mount video elements
+        await new Promise(r => setTimeout(r, 80))
+        service.setMediaElements(screenRef.current, cameraRef.current, audioRef.current)
+        service.connectRoom(info.token, info.livekitUrl).catch(() => {})
+      },
+
+      onPaymentRequired: async (gate: PaymentGate) => {
+        // Check localStorage guest session / already-paid status
+        try {
+          const uid = service.myUserId ?? ''
+          const res = await fetch(
+            `${STREAM_API}/payments/status?roomId=${encodeURIComponent(gate.roomId)}&userId=${encodeURIComponent(uid)}`,
+            { credentials: 'include' },
+          )
+          if (res.ok) {
+            const { paid } = await res.json() as { paid: boolean }
+            if (paid) {
+              setPhase('connecting')
+              service.joinStream(gate.roomId)
+              return
+            }
+          }
+        } catch {}
+        setHostName(gate.hostName)
+        setTitle(gate.title)
+        setPayGate(gate)
+        setPhase('payment')
+      },
+
+      onChat: (msg: ChatMessage) => {
+        const isMe = msg.userId === service.myUserId
+        addMsg({ user: isMe ? 'You' : msg.user, color: msg.color, text: msg.text })
+      },
+
+      onViewerCount: (count) => {
+        if (typeof count === 'number' && !isNaN(count)) setViewers(count)
+      },
+
+      onStreamEnded: () => setPhase('ended'),
+
+      onError: (msg: string) => {
+        if (msg === 'stream not found') setPhase('ended')
+      },
+    })
+
+    service.joinStream(roomId)
+
+    return () => {
+      service.leaveStream()
+      service.setMediaElements(null, null, null)
+      service.on({
+        onJoined: undefined, onPaymentRequired: undefined, onChat: undefined,
+        onViewerCount: undefined, onStreamEnded: undefined, onError: undefined,
+      })
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [roomId])
+
+  /* ── Payment gate ── */
+  if (phase === 'payment' && payGate) {
+    const priceNaira = payGate.price > 0
+      ? `₦${(payGate.price / 100).toLocaleString('en-NG')} to watch`
+      : 'Paid stream'
     return (
-      <div style={styles.root}>
-        <div style={styles.gate}>
-          <div style={styles.gateLock}>🔒</div>
-          <p style={styles.gateTitle}>{hostName || 'Live'}</p>
-          <p style={styles.gatePrice}>
-            {priceKobo > 0 ? `₦${(priceKobo / 100).toLocaleString('en-NG')} to watch` : 'Paid stream'}
-          </p>
-          {payUrl ? (
-            <a href={payUrl} style={styles.gateBtn}>Pay & Watch</a>
-          ) : (
-            <a href={`https://world.twedot.com/?stream=${roomId}`} target="_top" style={styles.gateBtn}>
-              Watch on Twedot World
-            </a>
-          )}
+      <div style={s.root}>
+        <div style={s.gate}>
+          <div style={s.gateLock}>🔒</div>
+          <p style={s.gateTitle}>{hostName || 'Live'}{title ? ` · #${title}` : ''}</p>
+          <p style={s.gatePrice}>{priceNaira}</p>
+          <a href={`https://world.twedot.com/?stream=${roomId}`} target="_top" style={s.gateBtn}>
+            Pay & Watch on Twedot World
+          </a>
         </div>
       </div>
     )
   }
 
-  // ── Connecting ───────────────────────────────────────────────────
+  /* ── Connecting ── */
   if (phase === 'connecting') {
     return (
-      <div style={styles.root}>
-        <div style={styles.center}>
-          <div style={styles.spinner} />
+      <div style={s.root}>
+        <div style={s.center}>
+          <div style={s.spinner} />
           <p style={{ color: '#aaa', fontSize: 13, marginTop: 12 }}>Joining stream…</p>
         </div>
+        <style>{`@keyframes emb-spin { to { transform: rotate(360deg); } }`}</style>
       </div>
     )
   }
 
-  // ── Ended ───────────────────────────────────────────────────────
+  /* ── Ended ── */
   if (phase === 'ended') {
     return (
-      <div style={styles.root}>
-        <div style={styles.center}>
+      <div style={s.root}>
+        <div style={s.center}>
           <p style={{ color: '#aaa', fontSize: 14 }}>Stream ended</p>
         </div>
       </div>
     )
   }
 
-  // ── Live ─────────────────────────────────────────────────────────
+  /* ── Live ── */
   return (
-    <div style={styles.root}>
-      {/* Main video */}
+    <div style={s.root}>
+      {/* House / screen video */}
       <video
         ref={screenRef}
         autoPlay
         playsInline
-        muted={false}
-        style={{
-          position: 'absolute', inset: 0, width: '100%', height: '100%',
+        style={{ position: 'absolute', inset: 0, width: '100%', height: '100%',
           objectFit: 'contain', background: '#000',
-          display: viewMode === 'house' ? 'block' : 'none',
-        }}
+          display: viewMode === 'house' ? 'block' : 'none' }}
       />
-      {/* Camera pip / main */}
+      {/* Camera track */}
       <video
         ref={cameraRef}
         autoPlay
@@ -165,8 +176,8 @@ export default function EmbedViewer({ roomId }: Props) {
           position: 'absolute',
           ...(viewMode === 'camera'
             ? { inset: 0, width: '100%', height: '100%', objectFit: 'cover' }
-            : { bottom: 8, right: 8, width: 80, height: 80, borderRadius: 40, objectFit: 'cover', border: '2px solid rgba(255,255,255,0.3)' }
-          ),
+            : { bottom: 8, right: 8, width: 76, height: 76, borderRadius: 38,
+                objectFit: 'cover', border: '2px solid rgba(255,255,255,0.3)' }),
           display: hasCam ? 'block' : 'none',
           background: '#111',
         }}
@@ -174,40 +185,41 @@ export default function EmbedViewer({ roomId }: Props) {
       <audio ref={audioRef} autoPlay playsInline style={{ display: 'none' }} />
 
       {/* Top bar */}
-      <div style={styles.topBar}>
-        <span style={styles.liveBadge}>
-          <span style={styles.liveDot} />
-          LIVE
-        </span>
-        {hostName && <span style={styles.hostName}>{hostName}{title ? ` · #${title}` : ''}</span>}
-        <span style={styles.viewerCount}>👁 {viewers}</span>
+      <div style={s.topBar}>
+        <span style={s.liveBadge}><span style={s.liveDot} />LIVE</span>
+        <span style={s.topMeta}>{hostName}{title ? ` · #${title}` : ''}</span>
+        <span style={s.viewerCount}>👁 {viewers}</span>
         {hasCam && (
-          <button
-            onClick={() => setViewMode(v => v === 'house' ? 'camera' : 'house')}
-            style={styles.viewBtn}
-          >
+          <button onClick={() => setViewMode(v => v === 'house' ? 'camera' : 'house')} style={s.viewBtn}>
             {viewMode === 'house' ? 'Camera' : 'House'}
           </button>
         )}
-        {/* Open full experience */}
-        <a
-          href={`https://world.twedot.com/?stream=${roomId}`}
-          target="_top"
-          style={styles.expandBtn}
-          title="Open full experience"
-        >
-          ⛶
-        </a>
+        <a href={`https://world.twedot.com/?stream=${roomId}`} target="_top" style={s.expandBtn} title="Open full">⛶</a>
       </div>
+
+      {/* Chat overlay — last 5 messages, bottom-left, transparent */}
+      {messages.length > 0 && (
+        <div style={s.chatOverlay}>
+          {messages.slice(-5).map(m => (
+            <div key={m.id} style={s.chatRow}>
+              <span style={{ ...s.chatUser, color: m.color || '#a78bfa' }}>{m.user}</span>
+              <span style={s.chatText}>{m.text}</span>
+            </div>
+          ))}
+        </div>
+      )}
+
+      <style>{`
+        @keyframes emb-spin  { to { transform: rotate(360deg); } }
+        @keyframes emb-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+      `}</style>
     </div>
   )
 }
 
-const styles: Record<string, React.CSSProperties> = {
+const s: Record<string, React.CSSProperties> = {
   root: {
-    position: 'fixed', inset: 0,
-    background: '#000',
-    overflow: 'hidden',
+    position: 'fixed', inset: 0, background: '#000', overflow: 'hidden',
     fontFamily: 'system-ui, -apple-system, sans-serif',
   },
   center: {
@@ -219,7 +231,7 @@ const styles: Record<string, React.CSSProperties> = {
     border: '3px solid rgba(255,255,255,0.15)',
     borderTop: '3px solid #FF0040',
     borderRadius: '50%',
-    animation: 'embed-spin 0.8s linear infinite',
+    animation: 'emb-spin 0.8s linear infinite',
   },
   gate: {
     position: 'absolute', inset: 0,
@@ -228,7 +240,7 @@ const styles: Record<string, React.CSSProperties> = {
     background: 'linear-gradient(135deg,#1a0a2e,#0a0a1a)',
   },
   gateLock: { fontSize: 40 },
-  gateTitle: { color: '#fff', fontSize: 16, fontWeight: 700, margin: 0 },
+  gateTitle: { color: '#fff', fontSize: 15, fontWeight: 700, margin: 0, textAlign: 'center' },
   gatePrice: { color: '#f59e0b', fontSize: 13, fontWeight: 600, margin: 0 },
   gateBtn: {
     marginTop: 8, padding: '10px 24px',
@@ -240,21 +252,21 @@ const styles: Record<string, React.CSSProperties> = {
     position: 'absolute', top: 0, left: 0, right: 0,
     display: 'flex', alignItems: 'center', gap: 8,
     padding: '6px 10px',
-    background: 'linear-gradient(to bottom, rgba(0,0,0,0.65), transparent)',
+    background: 'linear-gradient(to bottom, rgba(0,0,0,0.7), transparent)',
   },
   liveBadge: {
     display: 'flex', alignItems: 'center', gap: 4,
     background: '#FF0040', color: '#fff',
     padding: '2px 7px', borderRadius: 4,
-    fontSize: 10, fontWeight: 800, letterSpacing: 0.5,
-    flexShrink: 0,
+    fontSize: 10, fontWeight: 800, letterSpacing: 0.5, flexShrink: 0,
   },
   liveDot: {
     width: 5, height: 5, borderRadius: '50%', background: '#fff',
-    animation: 'embed-pulse 1.5s ease-in-out infinite',
+    animation: 'emb-pulse 1.5s ease-in-out infinite',
+    display: 'inline-block',
   },
-  hostName: {
-    color: '#fff', fontSize: 12, fontWeight: 600,
+  topMeta: {
+    color: '#fff', fontSize: 11, fontWeight: 600,
     flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
   },
   viewerCount: { color: 'rgba(255,255,255,0.8)', fontSize: 11, flexShrink: 0 },
@@ -266,5 +278,26 @@ const styles: Record<string, React.CSSProperties> = {
   expandBtn: {
     color: 'rgba(255,255,255,0.6)', fontSize: 18, textDecoration: 'none',
     lineHeight: 1, flexShrink: 0, paddingLeft: 2,
+  },
+  /* Chat overlay */
+  chatOverlay: {
+    position: 'absolute', bottom: 12, left: 10,
+    display: 'flex', flexDirection: 'column', gap: 4,
+    maxWidth: '70%', pointerEvents: 'none',
+  },
+  chatRow: {
+    display: 'flex', alignItems: 'baseline', gap: 5, flexWrap: 'wrap',
+    background: 'rgba(0,0,0,0.35)',
+    borderRadius: 6, padding: '3px 8px',
+    backdropFilter: 'blur(4px)',
+  },
+  chatUser: {
+    fontSize: 11, fontWeight: 700, flexShrink: 0,
+    textShadow: '0 1px 3px rgba(0,0,0,0.8)',
+  },
+  chatText: {
+    color: '#fff', fontSize: 11,
+    textShadow: '0 1px 3px rgba(0,0,0,0.8)',
+    wordBreak: 'break-word',
   },
 }
