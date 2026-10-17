@@ -359,153 +359,145 @@ export default function ViewerStreamOverlay({ roomId, onLeave }: Props) {
     <div className="vs-root">
       <audio ref={audioRef} autoPlay />
 
-      <div className="vs-center">
-        <div className="vs-badge-bar">
+      {/* Full-screen video */}
+      <video
+        ref={screenRef}
+        className={`vs-video-bg vs-video-layer ${viewMode === 'house' ? 'vs-video-active' : ''}`}
+        autoPlay playsInline muted
+      />
+      <video
+        ref={cameraRef}
+        className={`vs-video-bg vs-video-layer ${viewMode === 'camera' ? 'vs-video-active' : ''}`}
+        autoPlay playsInline muted
+        onPlay={() => setHasCameraTrack(true)}
+      />
+      <div className="vs-video-placeholder">
+        <div className="vs-video-ph-icon">📡</div>
+        <div className="vs-video-ph-text">Waiting for video...</div>
+      </div>
+
+      {/* Gradient scrims */}
+      <div className="vs-top-scrim" />
+      <div className="vs-bottom-scrim" />
+
+      {/* Top bar */}
+      <div className="vs-top-bar">
+        <div className="vs-top-left">
           <div className="vs-badge-live">
             <span className="vs-badge-dot" />
             LIVE
           </div>
           <div className="vs-badge-viewers">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor">
               <path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/>
             </svg>
             {viewers}
           </div>
           <div className="vs-badge-timer">{fmtTime(elapsed)}</div>
-          {shopItems.length > 0 && (
-            <button className="vs-shop-btn" onClick={() => setShowShop(true)} title="View shop">
-              🛍 Shop
-            </button>
-          )}
-          <button
-            className="vs-share-btn"
-            onClick={(e) => {
-              const url = `https://twedot.com/live/${roomId}`
-              navigator.clipboard.writeText(url).catch(() => {})
-              const btn = e.currentTarget as HTMLButtonElement
-              btn.textContent = 'Copied!'; setTimeout(() => { btn.textContent = '🔗 Share' }, 2000)
-            }}
-          >🔗 Share</button>
-          <button className="vs-leave-btn" onClick={onLeave}>Leave</button>
         </div>
-
-        <div className="vs-video-area">
-          <video
-            ref={screenRef}
-            className={`vs-video vs-video-layer ${viewMode === 'house' ? 'vs-video-active' : ''}`}
-            autoPlay
-            playsInline
-            muted
-          />
-          <video
-            ref={cameraRef}
-            className={`vs-video vs-video-layer ${viewMode === 'camera' ? 'vs-video-active' : ''}`}
-            autoPlay
-            playsInline
-            muted
-            onPlay={() => setHasCameraTrack(true)}
-          />
-          <div className="vs-video-placeholder">
-            <div className="vs-video-ph-icon">📡</div>
-            <div className="vs-video-ph-text">Waiting for video...</div>
-          </div>
+        <div className="vs-top-right">
           {hasCameraTrack && (
             <button
               className="vs-view-switch"
               onClick={() => setViewMode(v => v === 'house' ? 'camera' : 'house')}
-              title={viewMode === 'house' ? 'Switch to camera' : 'Switch to house'}
             >
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
                 <path d="M16 17.01V10h-2v7.01h-3L15 21l4-3.99h-3zM9 3L5 6.99h3V14h2V6.99h3L9 3z"/>
               </svg>
               {viewMode === 'house' ? 'Camera' : 'House'}
             </button>
           )}
-        </div>
-
-        <div className="vs-info-bar">
-          <div className="vs-info-left">
-            <div className="vs-info-avatar">
-              {streamerAvatar
-                ? <img src={streamerAvatar} alt="" />
-                : <div className="vs-info-avatar-fb">{streamerName[0]?.toUpperCase()}</div>
-              }
-            </div>
-            <div className="vs-info-details">
-              <div className="vs-info-name">{streamerName}</div>
-              <div className="vs-info-stream-title">
-                {streamTitle}
-                {followerCount > 0 && <span className="vs-info-followers"> · {followerCount} followers</span>}
-              </div>
-            </div>
-          </div>
-          {!isGuest && streamerId !== service.myUserId && (
-            <button
-              className={`vs-follow-btn ${isFollowing ? 'vs-following' : ''}`}
-              onClick={async () => {
-                if (!streamerId) return
-                try {
-                  if (isFollowing) {
-                    const r = await unfollowUser(streamerId)
-                    setIsFollowing(r.is_following)
-                    setFollowerCount(r.follower_count)
-                    service.sendFollowUpdate(streamerId, r.follower_count, r.is_following)
-                  } else {
-                    const r = await followUser(streamerId)
-                    setIsFollowing(r.is_following)
-                    setFollowerCount(r.follower_count)
-                    service.sendFollowUpdate(streamerId, r.follower_count, r.is_following)
-                  }
-                } catch {}
-              }}
-            >
-              {isFollowing
-                ? <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
-                : <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
-              }
-              {isFollowing ? 'Following' : 'Follow'}
-            </button>
-          )}
+          <button className="vs-close-btn" onClick={onLeave}>✕</button>
         </div>
       </div>
 
-      {/* Right — Chat */}
-      <div className="vs-chat">
-        <div className="vs-chat-header">
-          <span className="vs-chat-label">Stream Chat</span>
+      {/* Host info */}
+      <div className="vs-host-bar">
+        <div className="vs-host-avatar">
+          {streamerAvatar
+            ? <img src={streamerAvatar} alt="" />
+            : <div className="vs-host-avatar-fb">{streamerName[0]?.toUpperCase()}</div>
+          }
         </div>
-
-        <div className="vs-chat-messages" ref={chatRef}>
-          {messages.map(m => (
-            <div key={m.id} className={`vs-msg ${m.system ? 'vs-msg-sys' : ''}`}>
-              {m.system ? (
-                <span className="vs-msg-sys-text">{m.text}</span>
-              ) : (
-                <>
-                  <span className="vs-msg-user" style={{ color: m.color }}>{m.user}</span>
-                  <span className="vs-msg-sep">: </span>
-                  <span className="vs-msg-text">{m.text}</span>
-                </>
-              )}
-            </div>
-          ))}
+        <div className="vs-host-info">
+          <div className="vs-host-name">{streamerName}</div>
+          {followerCount > 0
+            ? <div className="vs-host-followers">{followerCount} followers</div>
+            : streamTitle
+              ? <div className="vs-host-stream-title">{streamTitle.startsWith('#') ? streamTitle : `#${streamTitle}`}</div>
+              : null
+          }
         </div>
+        {!isGuest && streamerId !== service.myUserId && (
+          <button
+            className={`vs-follow-btn ${isFollowing ? 'vs-following' : ''}`}
+            onClick={async () => {
+              if (!streamerId) return
+              try {
+                if (isFollowing) {
+                  const r = await unfollowUser(streamerId)
+                  setIsFollowing(r.is_following)
+                  setFollowerCount(r.follower_count)
+                  service.sendFollowUpdate(streamerId, r.follower_count, r.is_following)
+                } else {
+                  const r = await followUser(streamerId)
+                  setIsFollowing(r.is_following)
+                  setFollowerCount(r.follower_count)
+                  service.sendFollowUpdate(streamerId, r.follower_count, r.is_following)
+                }
+              } catch {}
+            }}
+          >
+            {isFollowing ? '✓ Following' : '+ Follow'}
+          </button>
+        )}
+        {shopItems.length > 0 && (
+          <button className="vs-shop-btn" onClick={() => setShowShop(true)}>🛍 Shop</button>
+        )}
+      </div>
 
-        <div className="vs-chat-bottom">
-          <div className="vs-chat-input-row">
-            <input
-              className="vs-chat-input"
-              type="text"
-              value={input}
-              onChange={e => setInput(e.target.value)}
-              onKeyDown={e => { if (e.key === 'Enter') sendMessage() }}
-              placeholder="Send a message..."
-            />
+      {/* Floating chat messages */}
+      <div className="vs-float-chat" ref={chatRef}>
+        {messages.map(m => (
+          <div key={m.id} className={`vs-float-msg ${m.system ? 'vs-float-msg-sys' : ''}`}>
+            {m.system ? (
+              <span className="vs-float-msg-sys-text">{m.text}</span>
+            ) : (
+              <>
+                <span className="vs-float-msg-user" style={{ color: m.color }}>{m.user}</span>
+                <span className="vs-float-msg-sep">: </span>
+                <span className="vs-float-msg-text">{m.text}</span>
+              </>
+            )}
           </div>
-          <div className="vs-chat-actions">
-            <button className="vs-chat-icon-btn" title="Emoji">😀</button>
-            <button className="vs-chat-send" onClick={sendMessage}>Chat</button>
-          </div>
+        ))}
+      </div>
+
+      {/* Bottom action bar */}
+      <div className="vs-bottom-bar">
+        <div className="vs-comment-input-wrap">
+          <input
+            className="vs-comment-input"
+            type="text"
+            value={input}
+            onChange={e => setInput(e.target.value)}
+            onKeyDown={e => { if (e.key === 'Enter') sendMessage() }}
+            placeholder="Say something..."
+          />
+        </div>
+        <div className="vs-action-icons">
+          <button className="vs-action-btn" title="Emoji" onClick={sendMessage}>😀</button>
+          <button
+            className="vs-action-btn"
+            title="Share"
+            onClick={(e) => {
+              const url = `https://twedot.com/live/${roomId}`
+              navigator.clipboard.writeText(url).catch(() => {})
+              const btn = e.currentTarget as HTMLButtonElement
+              btn.textContent = '✓'; setTimeout(() => { btn.textContent = '🔗' }, 2000)
+            }}
+          >🔗</button>
+          <button className="vs-action-btn" title="Gift">🎁</button>
         </div>
       </div>
 
