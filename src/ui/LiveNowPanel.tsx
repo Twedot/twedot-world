@@ -117,7 +117,7 @@ export default function LiveNowPanel({ onJoin, onGoLive, isLoggedIn }: Props) {
                   </div>
                   <div className="lnp-thumb-info">
                     <div className="lnp-thumb-name">{r.hostName}</div>
-                    <div className="lnp-thumb-title">{r.title}</div>
+                    <div className="lnp-thumb-title">{r.title.replace(/^#+/, '').trim()}</div>
                   </div>
                   <div className="lnp-thumb-viewers">
                     <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor">

@@ -1243,17 +1243,17 @@
   .ls-req-panel { display: none; }
   .ls-chat {
     width: 100%;
-    height: 40vh;
+    height: 35vh;
     flex-shrink: 0;
     border-left: none;
     border-top: 1px solid rgba(255,255,255,0.08);
   }
-  .ls-center { flex: 1; }
+  .ls-center { flex: 1; padding-top: 0; }
   .ls-info-stream-title { max-width: 140px; }
   .ls-info-follow, .ls-info-subscribe { display: none; }
   .ls-badge-bar { top: 8px; left: 8px; }
   .ls-countdown-cam { width: 140px; height: 105px; }
-  .ls-pip-cam { width: 120px; height: 90px; border-radius: 8px; top: 50px; right: 8px; }
+  .ls-pip-cam { width: 120px; height: 90px; border-radius: 8px; top: 8px; right: 8px; }
   .ls-inv-card { min-width: 200px; }
   .ls-inv-grid { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); }
 
@@ -1272,9 +1272,11 @@
     font-size: 12px;
     font-weight: 700;
     cursor: pointer;
-    margin-bottom: 8px;
+    margin-bottom: 0;
     pointer-events: auto;
     letter-spacing: 0.02em;
+    flex-shrink: 0;
+    border: none;
   }
   .rv-sheet-pill {
     width: 28px;
@@ -1287,5 +1289,43 @@
   /* Panels hidden when sheet is collapsed */
   .rv-sheet-hidden {
     display: none !important;
+  }
+}
+
+/* ── Phone-specific streaming tweaks (≤ 600px) ────────── */
+@media (max-width: 600px) {
+  /* Remove top padding — camera fills from top */
+  .ls-center { padding-top: 0; }
+
+  /* Hide PiP camera on small phones (host cam is the main stage) */
+  .ls-pip-cam { display: none; }
+
+  /* Compact badge bar */
+  .ls-badge-bar { top: 8px; left: 8px; gap: 6px; }
+  .ls-badge-live { font-size: 10px; padding: 3px 8px; }
+  .ls-badge-viewers { font-size: 10px; padding: 3px 8px; }
+  .ls-badge-timer { font-size: 10px; padding: 3px 8px; }
+
+  /* Compact controls bar — hide text labels */
+  .ls-ctrl-viewswap span,
+  .ls-ctrl-screenshare span { display: none; }
+  .ls-ctrl-viewswap, .ls-ctrl-screenshare { padding: 8px 10px; }
+  .ls-ctrl-share { padding: 6px 10px; font-size: 11px; }
+  .ls-ctrl-end { padding: 6px 12px; font-size: 11px; }
+
+  /* Info bar: hide follower stats to save space */
+  .ls-info-stats { display: none; }
+  .ls-info-name { font-size: 12px; }
+  .ls-info-avatar { width: 32px; height: 32px; }
+
+  /* Chat toggle button sits at bottom of center area */
+  .rv-sheet-toggle {
+    background: rgba(14, 14, 16, 0.85);
+    border-top: 1px solid rgba(255,255,255,0.08);
+    border-radius: 0;
+    width: 100%;
+    justify-content: center;
+    padding: 8px 16px;
+    font-size: 11px;
   }
 }

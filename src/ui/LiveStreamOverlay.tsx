@@ -73,6 +73,7 @@ export default function LiveStreamOverlay({ ownerName, ownerAvatar, inventoryIte
   const [viewMode, setViewMode] = useState<'camera' | 'house'>('camera')
   const [showAllItems, setShowAllItems] = useState(false)
   const [showShopStrip, setShowShopStrip] = useState(false)
+  const [chatOpen, setChatOpen] = useState(false)
   const [requests, setRequests] = useState<ProductRequest[]>([])
   const [screenSharing, setScreenSharing] = useState(false)
   const screenStreamRef = useRef<MediaStream | null>(null)
@@ -835,8 +836,14 @@ export default function LiveStreamOverlay({ ownerName, ownerAvatar, inventoryIte
         </div>
       </div>
 
+      {/* Mobile chat toggle — only visible on narrow screens via CSS */}
+      <button className="rv-sheet-toggle" onClick={() => setChatOpen(o => !o)}>
+        <span className="rv-sheet-pill" />
+        {chatOpen ? 'Hide Chat ▼' : `Chat${messages.length > 0 ? ` (${messages.length})` : ''} ▲`}
+      </button>
+
       {/* ═══ RIGHT PANEL — Chat ═══════════════════════════ */}
-      <div className="ls-chat">
+      <div className={`ls-chat${chatOpen ? '' : ' rv-sheet-hidden'}`}>
         <div className="ls-chat-header">
           <span className="ls-chat-hashtag">#general</span>
           <span className="ls-chat-label">Stream Chat</span>

@@ -1,6 +1,6 @@
 /* ── Collapsed pill ─────────────────────────────────── */
 .lnp-pill {
-  position: absolute;
+  position: fixed;
   top: 264px;
   right: 14px;
   display: flex;
@@ -41,7 +41,7 @@
 
 /* ── Expanded panel ────────────────────────────────── */
 .lnp-panel {
-  position: absolute;
+  position: fixed;
   top: 116px;
   right: 14px;
   width: 380px;
@@ -406,18 +406,18 @@
   letter-spacing: 0.02em;
 }
 
-@media (max-width: 600px) {
+@media (max-width: 768px) {
   .lnp-pill {
     top: auto;
-    bottom: 70px;
+    bottom: 80px;
     right: 14px;
   }
 
   .lnp-panel {
     width: calc(100vw - 28px);
-    max-height: 60vh;
+    max-height: 50vh;
     top: auto;
-    bottom: 60px;
+    bottom: 80px;
     right: 14px;
   }
 }
