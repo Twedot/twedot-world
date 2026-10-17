@@ -192,6 +192,22 @@ export default function ViewerStreamOverlay({ roomId, onLeave }: Props) {
     }
   }, [messages])
 
+  // When the user presses the browser back button from Paystack, the browser
+  // restores this page from bfcache with payProcessing=true still set.
+  // Reset payment state so the button reads "Pay" again instead of "Redirecting…"
+  useEffect(() => {
+    const onPageShow = (e: PageTransitionEvent) => {
+      if (e.persisted) {
+        payAbortRef.current?.abort()
+        payAbortRef.current = null
+        setPayProcessing(false)
+        setPayError('')
+      }
+    }
+    window.addEventListener('pageshow', onPageShow)
+    return () => window.removeEventListener('pageshow', onPageShow)
+  }, [])
+
   function cancelPay() {
     payAbortRef.current?.abort()
     payAbortRef.current = null
