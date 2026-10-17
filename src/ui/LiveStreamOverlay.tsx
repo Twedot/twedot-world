@@ -96,9 +96,9 @@ export default function LiveStreamOverlay({ ownerName, ownerAvatar, inventoryIte
     try {
       let stream: MediaStream
       try {
-        // First attempt: full constraints
+        // First attempt: 720p with echo cancellation
         stream = await navigator.mediaDevices.getUserMedia({
-          video: { width: { ideal: 640 }, height: { ideal: 480 } },
+          video: { width: { ideal: 1280 }, height: { ideal: 720 }, frameRate: { ideal: 30 } },
           audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true, channelCount: 1 },
         })
       } catch {
@@ -225,7 +225,7 @@ export default function LiveStreamOverlay({ ownerName, ownerAvatar, inventoryIte
           await service.connectRoom(token, livekitUrl)
 
           if (canvasRef?.current) {
-            await service.publishCanvas(canvasRef.current)
+            await service.publishCanvas(canvasRef.current, 20)
           }
 
           const preview = previewStreamRef.current
@@ -335,7 +335,7 @@ export default function LiveStreamOverlay({ ownerName, ownerAvatar, inventoryIte
         let stream: MediaStream
         try {
           stream = await navigator.mediaDevices.getUserMedia({
-            video: { width: { ideal: 640 }, height: { ideal: 480 } },
+            video: { width: { ideal: 1280 }, height: { ideal: 720 }, frameRate: { ideal: 30 } },
           })
         } catch {
           stream = await navigator.mediaDevices.getUserMedia({ video: true })

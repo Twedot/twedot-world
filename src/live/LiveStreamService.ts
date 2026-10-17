@@ -322,7 +322,9 @@ export class LiveStreamService {
     const lk = await getLK()
 
     const room = new lk.Room({
-      adaptiveStream: false,
+      // Auto-adjust video quality to the viewer's available bandwidth so the
+      // stream keeps playing smoothly on weak connections instead of freezing.
+      adaptiveStream: true,
       dynacast: false,
     })
 
@@ -352,6 +354,14 @@ export class LiveStreamService {
 
     room.on(lk.RoomEvent.TrackPublished, (pub, participant) => {
       console.log('[stream] TrackPublished source=', pub.source, 'kind=', pub.kind, 'from=', participant.identity)
+    })
+
+    room.on(lk.RoomEvent.Reconnecting, () => {
+      console.log('[stream] room reconnecting…')
+    })
+
+    room.on(lk.RoomEvent.Reconnected, () => {
+      console.log('[stream] room reconnected')
     })
 
     room.on(lk.RoomEvent.Disconnected, () => {
@@ -388,7 +398,7 @@ export class LiveStreamService {
 
   // ── Canvas capture (host broadcasts their 3D world) ─────
 
-  async publishCanvas(canvas: HTMLCanvasElement, fps = 5) {
+  async publishCanvas(canvas: HTMLCanvasElement, fps = 20) {
     console.log('[stream] publishCanvas called, room=', !!this._room, 'canvas=', canvas.width, 'x', canvas.height)
     if (!this._room) { console.warn('[stream] no room, skipping publishCanvas'); return }
     const lk = await getLK()
@@ -403,7 +413,7 @@ export class LiveStreamService {
         source: lk.Track.Source.ScreenShare,
         name: 'world-view',
         simulcast: false,
-        videoEncoding: { maxBitrate: 200_000, maxFramerate: fps },
+        videoEncoding: { maxBitrate: 2_000_000, maxFramerate: fps },
       })
       console.log('[stream] canvas track published, sid=', pub.trackSid)
     } catch (err) {
@@ -421,7 +431,7 @@ export class LiveStreamService {
     await this._room.localParticipant.publishTrack(track, {
       source: lk.Track.Source.Camera,
       simulcast: false,
-      videoEncoding: { maxBitrate: 300_000, maxFramerate: 15 },
+      videoEncoding: { maxBitrate: 1_500_000, maxFramerate: 30 },
     })
     console.log('[stream] camera track published')
   }
@@ -440,6 +450,7 @@ export class LiveStreamService {
     const lk = await getLK()
     await this._room.localParticipant.publishTrack(track, {
       source: lk.Track.Source.Microphone,
+      audioPreset: lk.AudioPresets.musicStereo, // 64 kbps — clear voice/music
     })
     console.log('[stream] mic track published')
   }
