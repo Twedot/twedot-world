@@ -3,6 +3,7 @@ import { Component, type ReactNode } from 'react'
 import { LiveProvider } from './live/LiveContext'
 import './index.css'
 import App from './App'
+import EmbedViewer from './ui/EmbedViewer'
 
 class ErrorBoundary extends Component<{ children: ReactNode }, { error: Error | null }> {
   state: { error: Error | null } = { error: null }
@@ -24,10 +25,15 @@ class ErrorBoundary extends Component<{ children: ReactNode }, { error: Error | 
   }
 }
 
+// Embed mode: world.twedot.com/?stream=ROOM_ID&embed=1
+// Renders only the lightweight LiveKit viewer — no city, no house.
+const _params = new URLSearchParams(window.location.search)
+const _embedRoomId = _params.get('embed') === '1' ? (_params.get('stream') ?? '') : ''
+
 createRoot(document.getElementById('root')!).render(
   <ErrorBoundary>
     <LiveProvider>
-      <App />
+      {_embedRoomId ? <EmbedViewer roomId={_embedRoomId} /> : <App />}
     </LiveProvider>
   </ErrorBoundary>
 )

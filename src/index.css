@@ -1,2 +1,5 @@
 *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 html, body, #root { width: 100%; height: 100%; overflow: hidden; font-family: 'Nunito', system-ui, sans-serif; background: #87ceeb; }
+
+@keyframes embed-spin  { to { transform: rotate(360deg); } }
+@keyframes embed-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
