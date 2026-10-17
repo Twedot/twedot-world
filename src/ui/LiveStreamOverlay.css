@@ -1319,8 +1319,8 @@
   /* Hide PiP camera on small phones (host cam is the main stage) */
   .ls-pip-cam { display: none; }
 
-  /* Compact badge bar */
-  .ls-badge-bar { top: 8px; left: 8px; gap: 6px; }
+  /* Compact badge bar — offset below hv-topbar (~40px) so it doesn't overlap the house title */
+  .ls-badge-bar { top: 50px; left: 8px; gap: 6px; }
   .ls-badge-live { font-size: 10px; padding: 3px 8px; }
   .ls-badge-viewers { font-size: 10px; padding: 3px 8px; }
   .ls-badge-timer { font-size: 10px; padding: 3px 8px; }

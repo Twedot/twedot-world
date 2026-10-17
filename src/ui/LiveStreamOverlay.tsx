@@ -52,8 +52,8 @@ interface ChatMsg {
 
 let _msgId = 0
 
-export default function LiveStreamOverlay({ ownerName, ownerAvatar, inventoryItems, followers, following, posts, onEnd, onCamMain, canvasRef, onViewerJoined, onViewerLeft, resuming }: Props) {
-  const { service } = useLive()
+export default function LiveStreamOverlay({ roomId, ownerName, ownerAvatar, inventoryItems, followers, following, posts, onEnd, onCamMain, canvasRef, onViewerJoined, onViewerLeft, resuming }: Props) {
+  const { service, liveRooms } = useLive()
   const [phase, setPhase] = useState<Phase>(resuming ? 'live' : 'setup')
   const [title, setTitle] = useState('')
   const [price, setPrice] = useState('')
@@ -90,6 +90,15 @@ export default function LiveStreamOverlay({ ownerName, ownerAvatar, inventoryIte
   const addMsg = useCallback((msg: Omit<ChatMsg, 'id'>) => {
     setMessages(prev => [...prev.slice(-150), { ...msg, id: ++_msgId }])
   }, [])
+
+  // Restore title from liveRooms when resuming after a page refresh
+  useEffect(() => {
+    if (resuming && !title) {
+      const room = liveRooms.find(r => r.roomId === roomId)
+      if (room?.title) setTitle(room.title.replace(/^#+/, '').trim())
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [liveRooms])
 
   // ── Camera preview (setup phase only) ──────────────────
 
@@ -831,7 +840,7 @@ export default function LiveStreamOverlay({ ownerName, ownerAvatar, inventoryIte
             </div>
             <div className="ls-info-details">
               <div className="ls-info-name">{ownerName}</div>
-              <div className="ls-info-stream-title">#{title}</div>
+              {title && <div className="ls-info-stream-title">#{title}</div>}
             </div>
           </div>
           <div className="ls-info-stats">
