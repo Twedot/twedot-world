@@ -106,7 +106,6 @@ export default function ViewerStreamOverlay({ roomId, onLeave }: Props) {
         try {
           const ref = sessionStorage.getItem(`twpay_${gate.roomId}`)
           if (ref) {
-            sessionStorage.removeItem(`twpay_${gate.roomId}`)
             const verifyRes = await fetch(`${streamApiBase}/payments/verify`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
@@ -114,6 +113,8 @@ export default function ViewerStreamOverlay({ roomId, onLeave }: Props) {
               body: JSON.stringify({ reference: ref, roomId: gate.roomId, userId: service.myUserId ?? '' }),
             })
             if (verifyRes.ok) {
+              // Remove only after successful verify so retries can use the same ref
+              try { sessionStorage.removeItem(`twpay_${gate.roomId}`) } catch {}
               setState('connecting')
               service.joinStream(gate.roomId)
               return
