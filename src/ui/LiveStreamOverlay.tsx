@@ -74,6 +74,9 @@ export default function LiveStreamOverlay({ ownerName, ownerAvatar, inventoryIte
   const [showAllItems, setShowAllItems] = useState(false)
   const [showShopStrip, setShowShopStrip] = useState(false)
   const [requests, setRequests] = useState<ProductRequest[]>([])
+  const [screenSharing, setScreenSharing] = useState(false)
+  const screenStreamRef = useRef<MediaStream | null>(null)
+  const canShareScreen = typeof navigator !== 'undefined' && !!(navigator.mediaDevices as unknown as Record<string, unknown>)?.getDisplayMedia
   const previewStreamRef = useRef<MediaStream | null>(null)
   const setupVidRef = useRef<HTMLVideoElement>(null)
   const countdownVidRef = useRef<HTMLVideoElement>(null)
@@ -370,6 +373,35 @@ export default function LiveStreamOverlay({ ownerName, ownerAvatar, inventoryIte
       setMicOn(next)
     } catch {
       // mic toggle failed, don't change state
+    }
+  }
+
+  async function toggleScreenShare() {
+    if (!screenSharing) {
+      try {
+        const stream = await (navigator.mediaDevices as unknown as { getDisplayMedia: (c: object) => Promise<MediaStream> })
+          .getDisplayMedia({ video: { frameRate: { ideal: 30 } }, audio: true })
+        screenStreamRef.current = stream
+        await service.publishScreenTrack(stream)
+        setScreenSharing(true)
+
+        // Handle "Stop sharing" clicked in the browser's native picker
+        const videoTrack = stream.getVideoTracks()[0]
+        if (videoTrack) {
+          videoTrack.addEventListener('ended', () => {
+            screenStreamRef.current = null
+            setScreenSharing(false)
+            service.unpublishScreen(canvasRef?.current ?? undefined, 20).catch(() => {})
+          }, { once: true })
+        }
+      } catch {
+        // User cancelled or browser denied — do nothing
+      }
+    } else {
+      screenStreamRef.current?.getTracks().forEach(t => t.stop())
+      screenStreamRef.current = null
+      setScreenSharing(false)
+      await service.unpublishScreen(canvasRef?.current ?? undefined, 20)
     }
   }
 
@@ -708,6 +740,24 @@ export default function LiveStreamOverlay({ ownerName, ownerAvatar, inventoryIte
               <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
                 <path d="M16 17.01V10h-2v7.01h-3L15 21l4-3.99h-3zM9 3L5 6.99h3V14h2V6.99h3L9 3z"/>
               </svg>
+            </button>
+          )}
+          {canShareScreen && (
+            <button
+              className={`ls-ctrl-screenshare${screenSharing ? ' ls-ctrl-screenshare-on' : ''}`}
+              onClick={toggleScreenShare}
+              title={screenSharing ? 'Stop sharing screen' : 'Share your screen'}
+            >
+              {screenSharing ? (
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M21 3H3c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h18c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H3V5h18v14zm-10-7l-5 5h10l-5-5zm0-6l5 5H6l5-5z"/>
+                </svg>
+              ) : (
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M20 3H4c-1.1 0-2 .9-2 2v11c0 1.1.9 2 2 2h3l-1 1v1h12v-1l-1-1h3c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 13H4V5h16v11z"/>
+                </svg>
+              )}
+              <span>{screenSharing ? 'Stop Share' : 'Share Screen'}</span>
             </button>
           )}
           <div className="ls-ctrl-spacer" />

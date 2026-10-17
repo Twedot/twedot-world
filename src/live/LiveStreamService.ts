@@ -101,6 +101,8 @@ export class LiveStreamService {
   private _cameraEl: HTMLVideoElement | null = null
   private _audioEl: HTMLAudioElement | null = null
   private _canvasTrack: MediaStreamTrack | null = null
+  private _screenShareTrack: MediaStreamTrack | null = null
+  private _screenShareAudioTrack: MediaStreamTrack | null = null
   private _myUserId: string | null = null
   private _myName: string | null = null
   private _myPhoto: string | null = null
@@ -453,6 +455,73 @@ export class LiveStreamService {
       audioPreset: lk.AudioPresets.musicStereo, // 64 kbps — clear voice/music
     })
     console.log('[stream] mic track published')
+  }
+
+  // ── Screen share (host) ─────────────────────────────────
+  // Replaces the canvas world-view with a real getDisplayMedia stream.
+  // Canvas is unpublished first; unpublishScreen re-publishes it.
+
+  async publishScreenTrack(stream: MediaStream) {
+    if (!this._room) return
+    const lk = await getLK()
+
+    // Unpublish the canvas track that is currently occupying ScreenShare source
+    const existing = this._room.localParticipant.getTrackPublication(lk.Track.Source.ScreenShare)
+    if (existing?.track) {
+      await this._room.localParticipant.unpublishTrack(existing.track.mediaStreamTrack)
+    }
+    if (this._canvasTrack) {
+      this._canvasTrack.stop()
+      this._canvasTrack = null
+    }
+
+    const videoTrack = stream.getVideoTracks()[0]
+    if (videoTrack) {
+      this._screenShareTrack = videoTrack
+      await this._room.localParticipant.publishTrack(videoTrack, {
+        source: lk.Track.Source.ScreenShare,
+        simulcast: false,
+        videoEncoding: { maxBitrate: 3_000_000, maxFramerate: 30 },
+      })
+      console.log('[stream] screen share track published')
+    }
+
+    const audioTrack = stream.getAudioTracks()[0]
+    if (audioTrack) {
+      this._screenShareAudioTrack = audioTrack
+      await this._room.localParticipant.publishTrack(audioTrack, {
+        source: lk.Track.Source.ScreenShareAudio,
+      })
+      console.log('[stream] screen share audio track published')
+    }
+  }
+
+  async unpublishScreen(canvas?: HTMLCanvasElement, fps = 20) {
+    if (!this._room || !lkModule) return
+
+    if (this._screenShareTrack) {
+      const pub = this._room.localParticipant.getTrackPublication(lkModule.Track.Source.ScreenShare)
+      if (pub?.track) {
+        await this._room.localParticipant.unpublishTrack(pub.track.mediaStreamTrack)
+      }
+      this._screenShareTrack.stop()
+      this._screenShareTrack = null
+      console.log('[stream] screen share track unpublished')
+    }
+
+    if (this._screenShareAudioTrack) {
+      const pub = this._room.localParticipant.getTrackPublication(lkModule.Track.Source.ScreenShareAudio)
+      if (pub?.track) {
+        await this._room.localParticipant.unpublishTrack(pub.track.mediaStreamTrack)
+      }
+      this._screenShareAudioTrack.stop()
+      this._screenShareAudioTrack = null
+    }
+
+    // Re-publish canvas world-view so viewers continue watching
+    if (canvas) {
+      await this.publishCanvas(canvas, fps)
+    }
   }
 
   async setMicEnabled(on: boolean) {

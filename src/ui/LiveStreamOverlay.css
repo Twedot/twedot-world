@@ -606,6 +606,26 @@
   transition: all 0.15s;
 }
 .ls-ctrl-end:hover { background: #EB0400; color: #fff; border-color: #EB0400; }
+.ls-ctrl-screenshare {
+  display: flex; align-items: center; gap: 6px;
+  padding: 8px 14px;
+  border-radius: 8px;
+  border: 1px solid rgba(255,255,255,0.15);
+  background: rgba(255,255,255,0.08);
+  color: #EFEFF1;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+.ls-ctrl-screenshare:hover { background: rgba(255,255,255,0.16); }
+.ls-ctrl-screenshare-on {
+  border-color: rgba(34,197,94,0.6) !important;
+  background: rgba(34,197,94,0.18) !important;
+  color: #4ADE80 !important;
+}
+.ls-ctrl-screenshare-on:hover { background: rgba(34,197,94,0.28) !important; }
 .ls-ctrl-share {
   padding: 8px 14px;
   border-radius: 8px;
