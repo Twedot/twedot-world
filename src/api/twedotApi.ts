@@ -6,8 +6,13 @@ function getNativeToken(): string | null {
   try { return (window as unknown as Record<string, string>).__twedotToken ?? null } catch { return null }
 }
 
+function getNativeDeviceId(): string | null {
+  try { return (window as unknown as Record<string, string>).__twedotDeviceId ?? null } catch { return null }
+}
+
 function apiFetch(url: string, init: RequestInit = {}): Promise<Response> {
   const token = getNativeToken()
+  const deviceId = getNativeDeviceId()
   return fetch(url, {
     ...init,
     credentials: 'include',
@@ -15,6 +20,7 @@ function apiFetch(url: string, init: RequestInit = {}): Promise<Response> {
       'Content-Type': 'application/json',
       'x-platform': 'web',
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      ...(deviceId ? { 'x-device-id': deviceId } : {}),
       ...(init.headers as Record<string, string>),
     },
   })
