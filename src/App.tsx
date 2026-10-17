@@ -67,7 +67,6 @@ export default function App() {
   const [picked,        setPicked]        = useState<BuildingDef | null>(null)
   const [homePicked,    setHomePicked]    = useState<WorldUser | null>(null)
   const [rentSign,      setRentSign]      = useState<{ ownerId: string } | null>(null)
-  const [clock,         setClock]         = useState('')
   const [loadPct,       setLoadPct]       = useState<number>(-1)
   const [myStats,       setMyStats]       = useState<MyWorldStats | null>(null)
   const [walletStats,   setWalletStats]   = useState<WalletStats | null>(null)
@@ -85,18 +84,6 @@ export default function App() {
   const [bizList, setBizList] = useState<TwedotBusiness[]>([])
   const [goLiveOpen, setGoLiveOpen] = useState(false)
 
-  useEffect(() => {
-    const tick = () => {
-      const n = new Date()
-      const hh = String(n.getHours()).padStart(2, '0')
-      const mm = String(n.getMinutes()).padStart(2, '0')
-      const ss = String(n.getSeconds()).padStart(2, '0')
-      setClock(`${hh}:${mm}:${ss}`)
-    }
-    tick()
-    const id = setInterval(tick, 1000)
-    return () => clearInterval(id)
-  }, [])
 
   async function fetchTwedotProfile(): Promise<boolean> {
     try {
