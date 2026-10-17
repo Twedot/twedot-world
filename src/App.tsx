@@ -13,6 +13,7 @@ import HouseView from './ui/HouseView'
 import RestaurantView from './ui/RestaurantView'
 import CitySearch from './ui/CitySearch'
 import LiveNowPanel from './ui/LiveNowPanel'
+import LiveStoriesStrip from './ui/LiveStoriesStrip'
 import { getMyProfile, getContentStats, openAuthPopup, silentAuthViaIframe, exchangeBridgeCode, fetchPublicBusinesses } from './api/twedotApi'
 import type { TwedotUser, TwedotBusiness } from './api/twedotApi'
 import { businessesToBuildingDefs, businessToBuildingConfig, applyBusinessClaims } from './buildings/businessMapConfig'
@@ -471,6 +472,13 @@ export default function App() {
               <button onClick={() => engineRef.current?.zoom(false)}>−</button>
             </div>
           </div>
+
+          {!loading && <LiveStoriesStrip
+            onJoin={(roomId) => {
+              setVisitingUser({ id: roomId, name: 'Live User', watchingLive: true })
+              setView('house')
+            }}
+          />}
 
           {!loading && <LiveNowPanel
             isLoggedIn={!!twedotUser}

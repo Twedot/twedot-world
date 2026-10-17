@@ -1,0 +1,165 @@
+/* ── Live Stories Strip — horizontal story cards with live badge ── */
+
+.lss-strip {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 480;
+  background: rgba(10, 10, 12, 0.90);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 10px 16px 14px;
+  pointer-events: auto;
+}
+
+.lss-label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  color: rgba(255,255,255,0.45);
+  text-transform: uppercase;
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.lss-label-dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: #FF0040;
+  animation: lss-blink 1.2s ease-in-out infinite;
+}
+@keyframes lss-blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.2; }
+}
+
+.lss-scroll {
+  display: flex;
+  gap: 10px;
+  overflow-x: auto;
+  align-items: flex-start;
+  scrollbar-width: none;
+}
+.lss-scroll::-webkit-scrollbar { display: none; }
+
+/* ── Story card (portrait thumbnail) ── */
+.lss-card {
+  position: relative;
+  width: 82px;
+  height: 130px;
+  border-radius: 12px;
+  overflow: hidden;
+  flex-shrink: 0;
+  cursor: pointer;
+  border: none;
+  padding: 0;
+  background: #1a1a1e;
+  transition: transform 0.15s, box-shadow 0.15s;
+  /* Red ring border like stories */
+  outline: 2.5px solid #FF0040;
+  outline-offset: 2px;
+  animation: lss-ring-pulse 2s ease-in-out infinite;
+}
+@keyframes lss-ring-pulse {
+  0%, 100% { outline-color: #FF0040; box-shadow: 0 0 0 0 rgba(255,0,64,0.55); }
+  50%       { outline-color: #FF4D6A; box-shadow: 0 0 0 5px rgba(255,0,64,0); }
+}
+.lss-card:hover  { transform: scale(1.04); box-shadow: 0 8px 24px rgba(0,0,0,0.5); }
+.lss-card:active { transform: scale(0.97); }
+
+/* Host photo as card background */
+.lss-card-photo {
+  position: absolute;
+  inset: 0;
+  object-fit: cover;
+  width: 100%;
+  height: 100%;
+}
+
+/* Dark fallback when no photo */
+.lss-card-fb {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 28px;
+  font-weight: 800;
+  color: rgba(255,255,255,0.8);
+  background: linear-gradient(160deg, #2a1a4a, #1a1a2e);
+}
+
+/* Gradient overlay for text readability */
+.lss-card-grad {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to bottom,
+    rgba(0,0,0,0.45) 0%,
+    rgba(0,0,0,0.05) 40%,
+    rgba(0,0,0,0.6) 70%,
+    rgba(0,0,0,0.85) 100%
+  );
+}
+
+/* LIVE badge top-left */
+.lss-badge {
+  position: absolute;
+  top: 7px;
+  left: 7px;
+  background: #FF0040;
+  color: #fff;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.8px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  line-height: 1.4;
+}
+
+/* Viewer count top-right */
+.lss-viewers {
+  position: absolute;
+  top: 7px;
+  right: 6px;
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  color: rgba(255,255,255,0.85);
+  font-size: 9px;
+  font-weight: 600;
+}
+
+/* Host name at bottom */
+.lss-card-name {
+  position: absolute;
+  bottom: 7px;
+  left: 6px;
+  right: 6px;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  text-align: center;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-shadow: 0 1px 4px rgba(0,0,0,0.8);
+}
+
+/* Stream title */
+.lss-card-title {
+  position: absolute;
+  bottom: 20px;
+  left: 6px;
+  right: 6px;
+  color: rgba(255,255,255,0.65);
+  font-size: 8.5px;
+  font-weight: 500;
+  text-align: center;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
