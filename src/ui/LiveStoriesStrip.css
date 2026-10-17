@@ -1,5 +1,10 @@
 /* ── Live Stories Strip — horizontal story cards with live badge ── */
 
+/* Hide strip on mobile — LiveNowPanel pill covers the same use case */
+@media (max-width: 768px) {
+  .lss-strip { display: none !important; }
+}
+
 .lss-strip {
   position: fixed;
   top: 0;

@@ -304,8 +304,10 @@
 .ls-live-root {
   position: fixed;
   top: 0; left: 0; right: 0;
-  bottom: 0;
-  bottom: env(safe-area-inset-bottom, 0);
+  /* 100svh = small viewport height — excludes browser URL bar + system nav bar,
+     ensuring controls are never hidden behind the Android nav */
+  height: 100svh;
+  height: 100dvh; /* dynamic: even better on browsers that support it */
   display: flex;
   z-index: 510;
   pointer-events: none;

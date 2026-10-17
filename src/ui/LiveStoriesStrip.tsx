@@ -34,7 +34,7 @@ export default function LiveStoriesStrip({ onJoin }: Props) {
               {r.viewers}
             </span>
 
-            {r.title && <div className="lss-card-title">#{r.title}</div>}
+            {r.title && <div className="lss-card-title">#{r.title.replace(/^#+/, '').trim()}</div>}
             <div className="lss-card-name">{r.hostName}</div>
           </button>
         ))}
