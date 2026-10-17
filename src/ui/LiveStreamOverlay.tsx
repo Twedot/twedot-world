@@ -189,6 +189,10 @@ export default function LiveStreamOverlay({ ownerName, ownerAvatar, inventoryIte
   }, [])
 
   function handleEndStream() {
+    // Stop screen share tracks before disconnecting
+    screenStreamRef.current?.getTracks().forEach(t => t.stop())
+    screenStreamRef.current = null
+    setScreenSharing(false)
     service.endStream()
     stopPreviewStream()
     onEnd(requests)
@@ -285,6 +289,8 @@ export default function LiveStreamOverlay({ ownerName, ownerAvatar, inventoryIte
         addMsg({ user: isMe ? 'You' : msg.user, color: msg.color, text: msg.text })
       },
       onStreamEnded: () => {
+        screenStreamRef.current?.getTracks().forEach(t => t.stop())
+        screenStreamRef.current = null
         stopPreviewStream()
         onEnd(requests)
       },

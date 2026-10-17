@@ -35,7 +35,7 @@ export default function UserDashboard({ stats, wallet, walletLoading, rank, isLo
           <div className="udash-info">
             <div className="udash-name">{stats.name ?? 'Twedot User'}</div>
             {rank && <div className="udash-rank">{rank}</div>}
-            <div className="udash-sub">Lagos Virtual City · House #{stats.home_index + 1}</div>
+            <div className="udash-sub">Twedot World · House #{stats.home_index + 1}</div>
           </div>
         </div>
 

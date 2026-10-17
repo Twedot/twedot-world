@@ -548,7 +548,7 @@ export class CityEngine {
       ctx2.fillText('TWEDOT HOME', 310, 90)
       ctx2.font = '34px Arial'
       ctx2.fillStyle = 'rgba(255,255,255,0.75)'
-      ctx2.fillText('Lagos Virtual City', 310, 160)
+      ctx2.fillText('Twedot World', 310, 160)
       hTex.update()
     }
     const hMat = new StandardMaterial(b.id + '_hmat', this.scene)

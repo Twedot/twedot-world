@@ -434,7 +434,7 @@ export default function App() {
           {loading && (
             <div className="load-overlay">
               <div className="load-box">
-                <div className="load-title">Lagos Virtual City</div>
+                <div className="load-title">Twedot World</div>
                 <div className="load-sub">Loading city assets…</div>
                 <div className="load-track">
                   <div className="load-fill" style={{ width: `${loadPct}%` }} />
@@ -450,8 +450,7 @@ export default function App() {
           {!loading && <div className="bubbles-layer" ref={bubblesRef} />}
 
           <div className="ui-layer">
-            <div className="city-title">🌍 Lagos — Twedot Virtual City</div>
-            <div className="live-clock">{clock}</div>
+            <div className="city-title">🌍 Twedot World</div>
             {!loading && bizList.length > 0 && (
               <CitySearch
                 businesses={bizList}

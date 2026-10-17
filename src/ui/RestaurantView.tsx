@@ -502,7 +502,7 @@ export default function RestaurantView({ name, bizConfig, def, onExit }: Props) 
 
         {/* Claim banner */}
         <div className="rv-unclaimed-banner">
-          🏚️ No active business here yet — <a href={`mailto:support@twedot.com?subject=${encodeURIComponent(`Claim "${name}" in Lagos Virtual City`)}`} style={{ color: '#a78bfa' }}>claim this building</a>
+          🏚️ No active business here yet — <a href={`mailto:support@twedot.com?subject=${encodeURIComponent(`Claim "${name}" in Twedot World`)}`} style={{ color: '#a78bfa' }}>claim this building</a>
         </div>
       </div>
     )

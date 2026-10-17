@@ -99,9 +99,6 @@ export default function LiveNowPanel({ onJoin, onGoLive, isLoggedIn }: Props) {
                     <span className="lnp-live-badge-dot" />
                     LIVE
                   </span>
-                  {r.startedAt > 0 && (
-                    <span className="lnp-elapsed">{fmtElapsed(r.startedAt)}</span>
-                  )}
                   {r.price > 0 && (
                     <span className="lnp-price lnp-thumb-price">{fmtPrice(r.price)}</span>
                   )}

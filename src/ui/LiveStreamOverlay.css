@@ -302,7 +302,10 @@
 
 /* Root wrapper: left panel | center | right chat */
 .ls-live-root {
-  position: fixed; inset: 0;
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  bottom: 0;
+  bottom: env(safe-area-inset-bottom, 0);
   display: flex;
   z-index: 510;
   pointer-events: none;
@@ -1296,6 +1299,14 @@
 @media (max-width: 600px) {
   /* Remove top padding — camera fills from top */
   .ls-center { padding-top: 0; }
+
+  /* Push bottom bar above Android/iOS system nav */
+  .ls-info-bar {
+    padding-bottom: max(10px, env(safe-area-inset-bottom, 10px));
+  }
+  .rv-sheet-toggle {
+    padding-bottom: max(8px, env(safe-area-inset-bottom, 8px));
+  }
 
   /* Hide PiP camera on small phones (host cam is the main stage) */
   .ls-pip-cam { display: none; }
