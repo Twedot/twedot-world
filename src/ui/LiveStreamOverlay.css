@@ -1244,7 +1244,11 @@
 
 /* ── Mobile ───────────────────────────────────────────── */
 @media (max-width: 900px) {
-  .ls-live-root { flex-direction: column; }
+  .ls-live-root {
+    flex-direction: column;
+    box-sizing: border-box;
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
   .ls-req-panel { display: none; }
   .ls-chat {
     width: 100%;
