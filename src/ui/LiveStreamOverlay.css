@@ -1257,7 +1257,7 @@
     border-left: none;
     border-top: 1px solid rgba(255,255,255,0.08);
   }
-  .ls-center { flex: 1; padding-top: 0; }
+  .ls-center { flex: 1; padding-top: 0; min-height: 0; }
   .ls-info-stream-title { max-width: 140px; }
   .ls-info-follow, .ls-info-subscribe { display: none; }
   .ls-badge-bar { top: 8px; left: 8px; }
@@ -1265,6 +1265,8 @@
   .ls-pip-cam { width: 120px; height: 90px; border-radius: 8px; top: 8px; right: 8px; }
   .ls-inv-card { min-width: 200px; }
   .ls-inv-grid { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); }
+  .ls-cam-stage { overflow: hidden; }
+  .ls-cam-stage-video { object-fit: cover; }
 
   /* Bottom-sheet toggle handle */
   .rv-sheet-toggle {
