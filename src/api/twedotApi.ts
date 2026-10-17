@@ -2,19 +2,27 @@ const PROD_API = 'https://prodapi.twedot.com'
 const TWEDOT_WEB = 'https://twedot.com'
 const BASE = import.meta.env.DEV ? '/twedot-api' : (import.meta.env.VITE_TWEDOT_API_URL ?? PROD_API)
 
+function getNativeToken(): string | null {
+  try { return (window as unknown as Record<string, string>).__twedotToken ?? null } catch { return null }
+}
+
 function apiFetch(url: string, init: RequestInit = {}): Promise<Response> {
+  const token = getNativeToken()
   return fetch(url, {
     ...init,
     credentials: 'include',
     headers: {
       'Content-Type': 'application/json',
       'x-platform': 'web',
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
       ...(init.headers as Record<string, string>),
     },
   })
 }
 
 export function silentAuthViaIframe(): Promise<boolean> {
+  // Skip iframe when running inside a native WebView with an injected token
+  if (getNativeToken()) return Promise.resolve(false)
   return new Promise((resolve) => {
     const timeout = setTimeout(() => cleanup(false), 8000)
     const iframe = document.createElement('iframe')
