@@ -491,51 +491,70 @@
   position: absolute;
   bottom: calc(env(safe-area-inset-bottom, 0px) + 80px);
   left: 0;
-  width: 68%;
-  max-height: 220px;
+  width: 72%;
+  max-height: 260px;
   overflow: hidden;
   z-index: 10;
   display: flex;
   flex-direction: column;
   justify-content: flex-end;
-  padding: 0 14px 8px;
+  padding: 0 0 8px 12px;
   pointer-events: none;
 }
 
 .vs-float-msg {
-  display: inline-flex;
-  align-items: baseline;
-  gap: 4px;
-  padding: 5px 10px;
-  border-radius: 20px;
-  background: rgba(0,0,0,0.45);
-  backdrop-filter: blur(4px);
-  margin-top: 5px;
+  display: flex;
+  align-items: flex-start;
+  gap: 7px;
+  margin-top: 8px;
   max-width: 100%;
   word-break: break-word;
-  font-size: 13px;
+  font-size: 14px;
   line-height: 1.4;
 }
 
+.vs-float-msg-avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 800;
+  color: #fff;
+  flex-shrink: 0;
+  overflow: hidden;
+}
+.vs-float-msg-avatar img { width: 100%; height: 100%; object-fit: cover; }
+
+.vs-float-msg-body {
+  flex: 1;
+  min-width: 0;
+  padding-top: 4px;
+  text-shadow: 0 1px 3px rgba(0,0,0,0.9), 0 0 8px rgba(0,0,0,0.6);
+}
+
 .vs-float-msg-sys {
-  background: transparent;
-  backdrop-filter: none;
+  margin-left: 35px;
 }
 
 .vs-float-msg-sys-text {
-  color: rgba(255,255,255,0.4);
-  font-size: 11px;
+  color: rgba(255,255,255,0.45);
+  font-size: 12px;
   font-style: italic;
+  text-shadow: 0 1px 3px rgba(0,0,0,0.9);
 }
 
 .vs-float-msg-user {
   font-weight: 700;
-  flex-shrink: 0;
+  color: #fff;
 }
 
-.vs-float-msg-sep { color: rgba(255,255,255,0.3); }
-
-.vs-float-msg-text { color: rgba(255,255,255,0.9); }
+.vs-float-msg-text {
+  color: rgba(255,255,255,0.92);
+  margin-left: 4px;
+}
 
 /* ── Bottom action bar ─────────────────────────────── */
 .vs-bottom-bar {
@@ -545,9 +564,9 @@
   right: 0;
   z-index: 10;
   display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 10px 14px calc(env(safe-area-inset-bottom, 0px) + 12px);
+  align-items: flex-end;
+  gap: 8px;
+  padding: 10px 12px calc(env(safe-area-inset-bottom, 0px) + 10px);
 }
 
 .vs-comment-input-wrap {
@@ -559,59 +578,54 @@
   width: 100%;
   padding: 10px 16px;
   border-radius: 24px;
-  border: 1px solid rgba(255,255,255,0.25);
-  background: rgba(255,255,255,0.12);
-  backdrop-filter: blur(6px);
+  border: 1.5px solid rgba(255,255,255,0.3);
+  background: rgba(0,0,0,0.3);
+  backdrop-filter: blur(8px);
   color: #fff;
   font-size: 14px;
   outline: none;
   box-sizing: border-box;
 }
-.vs-comment-input::placeholder { color: rgba(255,255,255,0.45); }
-.vs-comment-input:focus { border-color: rgba(255,255,255,0.4); }
+.vs-comment-input::placeholder { color: rgba(255,255,255,0.5); }
+.vs-comment-input:focus { border-color: rgba(255,255,255,0.5); background: rgba(0,0,0,0.5); }
 
 .vs-action-icons {
   display: flex;
-  align-items: center;
-  gap: 6px;
+  align-items: flex-end;
+  gap: 2px;
   flex-shrink: 0;
 }
 
 .vs-action-btn {
-  width: 42px;
-  height: 42px;
-  border-radius: 50%;
-  border: none;
-  background: rgba(255,255,255,0.12);
-  backdrop-filter: blur(6px);
-  color: #fff;
-  font-size: 18px;
-  cursor: pointer;
   display: flex;
+  flex-direction: column;
   align-items: center;
-  justify-content: center;
-  transition: background 0.15s;
+  gap: 3px;
+  width: 44px;
+  border: none;
+  background: none;
+  color: #fff;
+  cursor: pointer;
+  padding: 4px 0;
   flex-shrink: 0;
 }
-.vs-action-btn:hover { background: rgba(255,255,255,0.22); }
 
-.vs-share-btn-sm {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  padding: 8px 14px;
-  border-radius: 20px;
-  border: none;
-  background: rgba(255,255,255,0.12);
-  backdrop-filter: blur(6px);
-  color: #fff;
-  font-size: 13px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background 0.15s;
-  flex-shrink: 0;
+.vs-action-btn-icon {
+  font-size: 22px;
+  line-height: 1;
+  text-shadow: 0 1px 4px rgba(0,0,0,0.7);
 }
-.vs-share-btn-sm:hover { background: rgba(255,255,255,0.22); }
+
+.vs-action-btn-label {
+  font-size: 10px;
+  font-weight: 600;
+  color: rgba(255,255,255,0.85);
+  text-shadow: 0 1px 3px rgba(0,0,0,0.8);
+  white-space: nowrap;
+  overflow: hidden;
+  max-width: 42px;
+  text-overflow: ellipsis;
+}
 
 /* ── Shop button ───────────────────────────────────── */
 .vs-shop-btn {

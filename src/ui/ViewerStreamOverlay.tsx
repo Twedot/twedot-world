@@ -421,12 +421,10 @@ export default function ViewerStreamOverlay({ roomId, onLeave }: Props) {
         </div>
         <div className="vs-host-info">
           <div className="vs-host-name">{streamerName}</div>
-          {followerCount > 0
-            ? <div className="vs-host-followers">{followerCount} followers</div>
-            : streamTitle
-              ? <div className="vs-host-stream-title">{streamTitle.startsWith('#') ? streamTitle : `#${streamTitle}`}</div>
-              : null
-          }
+          <div className="vs-host-followers">
+            {followerCount > 0 ? `${followerCount} followers` : ''}
+            {streamTitle ? ` · ${streamTitle.startsWith('#') ? streamTitle : `#${streamTitle}`}` : ''}
+          </div>
         </div>
         {!isGuest && streamerId !== service.myUserId && (
           <button
@@ -451,25 +449,26 @@ export default function ViewerStreamOverlay({ roomId, onLeave }: Props) {
             {isFollowing ? '✓ Following' : '+ Follow'}
           </button>
         )}
-        {shopItems.length > 0 && (
-          <button className="vs-shop-btn" onClick={() => setShowShop(true)}>🛍 Shop</button>
-        )}
       </div>
 
       {/* Floating chat messages */}
       <div className="vs-float-chat" ref={chatRef}>
         {messages.map(m => (
-          <div key={m.id} className={`vs-float-msg ${m.system ? 'vs-float-msg-sys' : ''}`}>
-            {m.system ? (
+          m.system ? (
+            <div key={m.id} className="vs-float-msg vs-float-msg-sys">
               <span className="vs-float-msg-sys-text">{m.text}</span>
-            ) : (
-              <>
-                <span className="vs-float-msg-user" style={{ color: m.color }}>{m.user}</span>
-                <span className="vs-float-msg-sep">: </span>
+            </div>
+          ) : (
+            <div key={m.id} className="vs-float-msg">
+              <div className="vs-float-msg-avatar" style={{ backgroundColor: m.color }}>
+                {m.user[0]?.toUpperCase()}
+              </div>
+              <div className="vs-float-msg-body">
+                <span className="vs-float-msg-user">{m.user}</span>
                 <span className="vs-float-msg-text">{m.text}</span>
-              </>
-            )}
-          </div>
+              </div>
+            </div>
+          )
         ))}
       </div>
 
@@ -482,11 +481,36 @@ export default function ViewerStreamOverlay({ roomId, onLeave }: Props) {
             value={input}
             onChange={e => setInput(e.target.value)}
             onKeyDown={e => { if (e.key === 'Enter') sendMessage() }}
-            placeholder="Say something..."
+            placeholder="Add comment..."
           />
         </div>
         <div className="vs-action-icons">
-          <button className="vs-action-btn" title="Emoji" onClick={sendMessage}>😀</button>
+          {!isGuest && streamerId !== service.myUserId && (
+            <button className="vs-action-btn" title="Subscribe"
+              onClick={async () => {
+                if (!streamerId || isFollowing) return
+                try {
+                  const r = await followUser(streamerId)
+                  setIsFollowing(r.is_following)
+                  setFollowerCount(r.follower_count)
+                  service.sendFollowUpdate(streamerId, r.follower_count, r.is_following)
+                } catch {}
+              }}
+            >
+              <span className="vs-action-btn-icon">⭐</span>
+              <span className="vs-action-btn-label">{isFollowing ? 'Following' : 'Subscribe'}</span>
+            </button>
+          )}
+          {shopItems.length > 0 && (
+            <button className="vs-action-btn" title="Shop" onClick={() => setShowShop(true)}>
+              <span className="vs-action-btn-icon">🛍</span>
+              <span className="vs-action-btn-label">Shop</span>
+            </button>
+          )}
+          <button className="vs-action-btn" title="Gift">
+            <span className="vs-action-btn-icon">🎁</span>
+            <span className="vs-action-btn-label">Gift</span>
+          </button>
           <button
             className="vs-action-btn"
             title="Share"
@@ -494,10 +518,13 @@ export default function ViewerStreamOverlay({ roomId, onLeave }: Props) {
               const url = `https://twedot.com/live/${roomId}`
               navigator.clipboard.writeText(url).catch(() => {})
               const btn = e.currentTarget as HTMLButtonElement
-              btn.textContent = '✓'; setTimeout(() => { btn.textContent = '🔗' }, 2000)
+              const icon = btn.querySelector('.vs-action-btn-icon') as HTMLElement
+              if (icon) { icon.textContent = '✓'; setTimeout(() => { icon.textContent = '🔗' }, 2000) }
             }}
-          >🔗</button>
-          <button className="vs-action-btn" title="Gift">🎁</button>
+          >
+            <span className="vs-action-btn-icon">🔗</span>
+            <span className="vs-action-btn-label">Share</span>
+          </button>
         </div>
       </div>
 
