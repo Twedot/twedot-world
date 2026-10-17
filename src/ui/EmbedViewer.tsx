@@ -50,7 +50,7 @@ export default function EmbedViewer({ roomId }: Props) {
     service.on({
       onJoined: async (info: JoinedInfo) => {
         setHostName(info.hostName)
-        setTitle(info.title)
+        setTitle((info.title || '').replace(/^#+/, '').trim())
         setViewers(info.viewers)
         setPhase('live')
         // Give React a tick to mount video elements
