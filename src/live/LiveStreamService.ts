@@ -119,10 +119,14 @@ export class LiveStreamService {
   get isAuthenticated() { return this._authUserId !== null }
 
   constructor(private wsUrl: string) {
-    let sid = sessionStorage.getItem('tw_stream_session')
+    // localStorage so the guest ID survives cross-origin redirects (Paystack) and browser restarts.
+    // sessionStorage is cleared by iOS Safari when returning from an external site, which would
+    // generate a new guest ID and break paid-stream access for demo users.
+    let sid: string | null = null
+    try { sid = localStorage.getItem('tw_stream_session') } catch {}
     if (!sid) {
       sid = (crypto.randomUUID?.() ?? Array.from({length:16},()=>Math.floor(Math.random()*16).toString(16)).join('')).replace(/-/g,'').slice(0,16)
-      sessionStorage.setItem('tw_stream_session', sid)
+      try { localStorage.setItem('tw_stream_session', sid) } catch {}
     }
     this._sessionId = sid
   }

@@ -102,7 +102,7 @@ export default function ViewerStreamOverlay({ roomId, onLeave }: Props) {
         }
       },
       onPaymentRequired: async (gate: PaymentGate) => {
-        // Auto-verify if returning from a Paystack redirect (reference stored before redirect)
+        // 1. Auto-verify if returning from Paystack redirect (reference in sessionStorage)
         try {
           const ref = sessionStorage.getItem(`twpay_${gate.roomId}`)
           if (ref) {
@@ -113,14 +113,35 @@ export default function ViewerStreamOverlay({ roomId, onLeave }: Props) {
               body: JSON.stringify({ reference: ref, roomId: gate.roomId, userId: service.myUserId ?? '' }),
             })
             if (verifyRes.ok) {
-              // Remove only after successful verify so retries can use the same ref
+              // Remove only after successful verify so retries can reuse the ref
               try { sessionStorage.removeItem(`twpay_${gate.roomId}`) } catch {}
               setState('connecting')
               service.joinStream(gate.roomId)
               return
             }
           }
+        } catch { /* fall through */ }
+
+        // 2. Check Redis directly — catches users who already paid but lost their
+        //    sessionStorage reference (iOS Safari clears it on cross-origin redirects,
+        //    or the tab was closed after paying). Guest session ID is now in
+        //    localStorage so it stays stable across redirects.
+        try {
+          const uid = service.myUserId ?? ''
+          const statusRes = await fetch(
+            `${streamApiBase}/payments/status?roomId=${encodeURIComponent(gate.roomId)}&userId=${encodeURIComponent(uid)}`,
+            { credentials: 'include' },
+          )
+          if (statusRes.ok) {
+            const { paid } = await statusRes.json() as { paid: boolean }
+            if (paid) {
+              setState('connecting')
+              service.joinStream(gate.roomId)
+              return
+            }
+          }
         } catch { /* fall through to payment modal */ }
+
         setPaymentGate(gate)
         setStreamerName(gate.hostName)
         setStreamTitle(gate.title)
