@@ -72,7 +72,7 @@ export default function LiveStreamOverlay({ ownerName, ownerAvatar, inventoryIte
   const [camLoading, setCamLoading] = useState(false)
   const [viewMode, setViewMode] = useState<'camera' | 'house'>('camera')
   const [showAllItems, setShowAllItems] = useState(false)
-  const [showShopStrip, setShowShopStrip] = useState(true)
+  const [showShopStrip, setShowShopStrip] = useState(false)
   const [requests, setRequests] = useState<ProductRequest[]>([])
   const previewStreamRef = useRef<MediaStream | null>(null)
   const setupVidRef = useRef<HTMLVideoElement>(null)

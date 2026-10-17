@@ -87,6 +87,10 @@ export default function HouseView({ stats, onExit, visitUser, twedotUser, postsC
   const [zoneBanner, setZoneBanner] = useState<string | null>(null)
   const [showLive, setShowLive] = useState(false)
   const [watchingLive, setWatchingLive] = useState(visitUser?.watchingLive ?? false)
+  // Sync when visitUser prop arrives after initial mount (e.g. returning from payment redirect)
+  useEffect(() => {
+    if (visitUser?.watchingLive) setWatchingLive(true)
+  }, [visitUser?.watchingLive])
   const [houseType, setHouseType] = useState<HouseType>('selfcon')
   const [visitorPopup, setVisitorPopup] = useState<{ name: string; rank: string } | null>(null)
   const [visitorMsg, setVisitorMsg] = useState('')
