@@ -124,6 +124,16 @@ export default function App() {
       const bridgeCode = params.get('bridge_code')
       const streamId = params.get('stream')
 
+      // Open stream viewer immediately — don't wait for auth to complete.
+      // Auth (fetchTwedotProfile / silentAuthViaIframe) can take 5-10s; the
+      // viewer overlay handles both auth and guest users on its own.
+      if (streamId) {
+        params.delete('stream')
+        window.history.replaceState({}, '', window.location.pathname + (params.toString() ? '?' + params : ''))
+        setVisitingUser({ id: streamId, name: 'Live User', watchingLive: true })
+        setView('house')
+      }
+
       if (bridgeCode) {
         params.delete('bridge_code')
         params.delete('bridge_failed')
@@ -139,14 +149,6 @@ export default function App() {
       if (!ok) {
         const bridged = await silentAuthViaIframe()
         if (bridged) await fetchTwedotProfile()
-      }
-
-      // Auto-join a stream from a shared link — open viewer immediately after auth
-      if (streamId) {
-        params.delete('stream')
-        window.history.replaceState({}, '', window.location.pathname + (params.toString() ? '?' + params : ''))
-        setVisitingUser({ id: streamId, name: 'Live User', watchingLive: true })
-        setView('house')
       }
     })()
   // eslint-disable-next-line react-hooks/exhaustive-deps

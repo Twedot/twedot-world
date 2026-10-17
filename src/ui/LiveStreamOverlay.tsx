@@ -733,13 +733,14 @@ export default function LiveStreamOverlay({ ownerName, ownerAvatar, inventoryIte
           </button>
           {camOn && (
             <button
-              className="ls-ctrl-btn ls-ctrl-swap2"
+              className="ls-ctrl-viewswap"
               onClick={() => setViewMode(v => v === 'camera' ? 'house' : 'camera')}
-              title={camIsBig ? 'Show house view' : 'Show camera view'}
+              title={camIsBig ? 'Switch to House View' : 'Switch to Camera View'}
             >
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor">
                 <path d="M16 17.01V10h-2v7.01h-3L15 21l4-3.99h-3zM9 3L5 6.99h3V14h2V6.99h3L9 3z"/>
               </svg>
+              <span>{camIsBig ? 'House View' : 'Camera View'}</span>
             </button>
           )}
           {canShareScreen && (

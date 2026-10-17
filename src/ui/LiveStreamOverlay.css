@@ -588,11 +588,20 @@
   color: #FF6B6B;
 }
 .ls-ctrl-btn.ls-ctrl-off2:hover { background: rgba(255,255,255,0.18); }
-.ls-ctrl-swap2 {
-  background: rgba(255,255,255,0.12) !important;
-  color: #EFEFF1 !important;
+.ls-ctrl-viewswap {
+  display: flex; align-items: center; gap: 6px;
+  padding: 8px 14px;
+  border-radius: 8px;
+  border: 1px solid rgba(255,255,255,0.15);
+  background: rgba(255,255,255,0.08);
+  color: #EFEFF1;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
 }
-.ls-ctrl-swap2:hover { background: rgba(145,70,255,0.6) !important; }
+.ls-ctrl-viewswap:hover { background: rgba(145,70,255,0.4); border-color: rgba(145,70,255,0.5); }
 .ls-ctrl-spacer { flex: 1; }
 .ls-ctrl-end {
   padding: 8px 18px;

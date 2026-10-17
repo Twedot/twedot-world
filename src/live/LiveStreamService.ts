@@ -324,8 +324,6 @@ export class LiveStreamService {
     const lk = await getLK()
 
     const room = new lk.Room({
-      // Auto-adjust video quality to the viewer's available bandwidth so the
-      // stream keeps playing smoothly on weak connections instead of freezing.
       adaptiveStream: true,
       dynacast: false,
     })
@@ -385,6 +383,28 @@ export class LiveStreamService {
     await room.connect(livekitUrl, token)
     console.log('[stream] connected, room=', room.name)
     this._room = room
+
+    // Attach tracks that were already subscribed before our listeners registered.
+    // Prevents a race where TrackSubscribed fires during connect() before
+    // _screenEl/_cameraEl/_audioEl refs are ready — without this viewers see
+    // a black screen until the host republishes.
+    room.remoteParticipants.forEach(p => {
+      p.trackPublications.forEach(pub => {
+        if (!pub.track || !pub.isSubscribed) return
+        const track = pub.track
+        if (track.kind === lk.Track.Kind.Video) {
+          if (track.source === lk.Track.Source.ScreenShare && this._screenEl) {
+            track.attach(this._screenEl)
+          } else if (track.source === lk.Track.Source.Camera && this._cameraEl) {
+            track.attach(this._cameraEl)
+          } else if (this._screenEl) {
+            track.attach(this._screenEl)
+          }
+        } else if (track.kind === lk.Track.Kind.Audio && this._audioEl) {
+          track.attach(this._audioEl)
+        }
+      })
+    })
   }
 
   async disconnectRoom() {
