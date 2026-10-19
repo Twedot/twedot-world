@@ -326,6 +326,14 @@ export class LiveStreamService {
     const room = new lk.Room({
       adaptiveStream: true,
       dynacast: false,
+      // Give up to ~90 s of retries so a brief tab suspension during the OS
+      // screen picker or a momentary network blip doesn't end the stream.
+      reconnectPolicy: {
+        nextRetryDelayInMs: (ctx: { retryCount: number }) => {
+          if (ctx.retryCount >= 15) return null
+          return Math.min(ctx.retryCount * 1000 + 500, 10000)
+        },
+      },
     })
 
     room.on(lk.RoomEvent.TrackSubscribed, (track, _pub, participant) => {
@@ -365,8 +373,15 @@ export class LiveStreamService {
     })
 
     room.on(lk.RoomEvent.Disconnected, () => {
-      console.log('[stream] room disconnected')
-      this.handlers.onStreamEnded?.()
+      console.log('[stream] room disconnected, hosting=', this._isHosting)
+      if (this._isHosting) {
+        // Broadcaster: don't end the stream — the backend stream is still live.
+        // Surface an error so the host knows the connection dropped and can
+        // decide whether to end manually or wait for automatic reconnection.
+        this.handlers.onError?.('Lost connection — your stream may still be live. End it manually if needed.')
+      } else {
+        this.handlers.onStreamEnded?.()
+      }
     })
 
     room.on(lk.RoomEvent.Connected, () => {
