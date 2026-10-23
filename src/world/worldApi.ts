@@ -1,11 +1,17 @@
 const WORLD_API = import.meta.env.VITE_WORLD_API_URL ?? 'http://localhost:2027'
 
+function getWorldToken(): string | null {
+  try { return (window as unknown as Record<string, string>).__twedotToken ?? null } catch { return null }
+}
+
 function apiFetch(url: string, init: RequestInit = {}): Promise<Response> {
+  const token = getWorldToken()
   return fetch(url, {
     ...init,
     credentials: 'include',
     headers: {
       'Content-Type': 'application/json',
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
       ...(init.headers as Record<string, string>),
     },
   })

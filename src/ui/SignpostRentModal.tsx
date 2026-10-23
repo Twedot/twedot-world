@@ -54,9 +54,11 @@ export default function SignpostRentModal({ building, owner, currentUserId, isLo
       form.append('image', imgFileRef.current)
       form.append('duration_days', String(duration.days))
 
-      const res = await fetch(`${apiUrl}/world/signpost/${building.id}/rent`, {
+      const token = (window as unknown as Record<string, string>).__twedotToken ?? null
+      const res = await fetch(`${apiUrl}/world/signpost/${building.ownerId}/rent`, {
         method: 'POST',
         credentials: 'include',
+        headers: token ? { Authorization: `Bearer ${token}` } : undefined,
         body: form,
       })
       if (!res.ok) {

@@ -1,10 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { HouseScene } from '../engine/HouseScene'
 import { AvatarController } from '../engine/AvatarController'
-import { useLive } from '../live/LiveContext'
-import LiveStreamOverlay from './LiveStreamOverlay'
-import ViewerStreamOverlay from './ViewerStreamOverlay'
-import type { ProductRequest } from './LiveStreamOverlay'
 import { RoomVisitors } from '../engine/RoomVisitors'
 import { fetchHouseState } from '../world/worldApi'
 import type { FurnitureType, RoomZone, HouseType } from '../engine/HouseScene'
@@ -14,7 +10,6 @@ import type { TwedotUser } from '../api/twedotApi'
 import { getUserProfile, followUser, unfollowUser, getMyInventory } from '../api/twedotApi'
 import type { InventoryItem } from '../api/twedotApi'
 import { getRankLabel } from '../api/globalRank'
-import { createPurchaseRequest } from '../api/twedotApi'
 import MyRequestsPanel from './MyRequestsPanel'
 import CustomerOrdersPanel from './CustomerOrdersPanel'
 import './HouseView.css'
@@ -26,7 +21,6 @@ interface Props {
   twedotUser?: TwedotUser | null
   postsCount?: number
   onLogin?: () => Promise<boolean>
-  autoOpenLive?: boolean
 }
 
 interface FurnDef { type: FurnitureType; label: string; emoji: string }
@@ -60,8 +54,7 @@ const ZONE_LABEL: Record<RoomZone, string> = {
   kitchen: 'the kitchen',
 }
 
-export default function HouseView({ stats, onExit, visitUser, twedotUser, postsCount = 0, onLogin, autoOpenLive }: Props) {
-  const { service } = useLive()
+export default function HouseView({ stats, onExit, visitUser, twedotUser, postsCount = 0, onLogin }: Props) {
   const cvRef      = useRef<HTMLCanvasElement>(null)
   const sceneRef   = useRef<HouseScene | null>(null)
   const avatarRef  = useRef<AvatarController | null>(null)
@@ -85,46 +78,12 @@ export default function HouseView({ stats, onExit, visitUser, twedotUser, postsC
   const [bizModal, setBizModal] = useState(false)
   const [showProfile, setShowProfile] = useState(false)
   const [zoneBanner, setZoneBanner] = useState<string | null>(null)
-  const [showLive, setShowLive] = useState(false)
-  const [watchingLive, setWatchingLive] = useState(visitUser?.watchingLive ?? false)
-  // Sync when visitUser prop arrives after initial mount (e.g. returning from payment redirect)
-  useEffect(() => {
-    if (visitUser?.watchingLive) setWatchingLive(true)
-  }, [visitUser?.watchingLive])
   const [houseType, setHouseType] = useState<HouseType>('selfcon')
   const [visitorPopup, setVisitorPopup] = useState<{ name: string; rank: string } | null>(null)
   const [visitorMsg, setVisitorMsg] = useState('')
-  // Saved for post-stream request review (future: persist to DB)
-  const [, setStreamRequests] = useState<ProductRequest[]>([])
 
   const [inventory, setInventory] = useState<InventoryItem[]>([])
-  const [isResuming, setIsResuming] = useState(false)
   const [activePanel, setActivePanel] = useState<'myRequests' | 'orders' | null>(null)
-
-  // Auto-open live overlay when navigated here via "Go Live" shortcut
-  useEffect(() => {
-    if (autoOpenLive && isOwn) setShowLive(true)
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [autoOpenLive, isOwn])
-
-  // Auto-resume: if the server tells us we have an active stream, open the overlay
-  useEffect(() => {
-    if (!isOwn) return
-    if (service.isHosting) {
-      setIsResuming(true)
-      setShowLive(true)
-    }
-    service.on({
-      onResumed: () => {
-        setIsResuming(true)
-        setShowLive(true)
-      },
-    })
-    return () => {
-      service.on({ onResumed: undefined })
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isOwn])
 
   useEffect(() => {
     const cv = cvRef.current!
@@ -187,39 +146,6 @@ export default function HouseView({ stats, onExit, visitUser, twedotUser, postsC
     }
   }, [ownerId])
 
-  // Spawn visitor avatars from real stream join/leave events
-  useEffect(() => {
-    const hs = sceneRef.current
-    if (!showLive || !hs) {
-      visitorsRef.current?.dispose()
-      visitorsRef.current = null
-      return
-    }
-
-    const visitors = new RoomVisitors(hs.scene)
-    visitorsRef.current = visitors
-    visitors.onVisitorClicked = (_id, name, rank) => {
-      setVisitorPopup({ name, rank })
-      setVisitorMsg('')
-    }
-
-    const pointerObs = hs.scene.onPointerObservable.add((info) => {
-      if (info.type === 2) {
-        const pick = hs.scene.pick(hs.scene.pointerX, hs.scene.pointerY)
-        const vid = (pick?.pickedMesh as { metadata?: { visitorId?: string } })?.metadata?.visitorId
-        if (typeof vid === 'string') {
-          const vi = visitors.getVisitorInfo(vid)
-          if (vi) visitors.onVisitorClicked?.(vid, vi.name, vi.rank)
-        }
-      }
-    })
-
-    return () => {
-      hs.scene.onPointerObservable.remove(pointerObs)
-      visitors.dispose()
-      visitorsRef.current = null
-    }
-  }, [showLive])
 
   function handlePickFurniture(type: FurnitureType) {
     const hs = sceneRef.current; if (!hs) return
@@ -255,11 +181,11 @@ export default function HouseView({ stats, onExit, visitUser, twedotUser, postsC
       <div className="hv-topbar">
         <button className="hv-exit" onClick={onExit}>← City</button>
         <span className="hv-title">🏠 {ownerName}'s House</span>
-        {isOwn && !showLive && <div className="hv-hint">Tap floor to walk</div>}
+        {isOwn && <div className="hv-hint">Tap floor to walk</div>}
       </div>
 
       {/* ── Profile trigger button ────────────────────────── */}
-      {profileData && !showLive && (
+      {profileData && (
         <button className="hv-profile-trigger" onClick={() => setShowProfile(true)}>
           <div className="hv-trigger-avatar">
             {ownerAvatar
@@ -333,17 +259,6 @@ export default function HouseView({ stats, onExit, visitUser, twedotUser, postsC
             <div className="hv-sh-section">
               <div className="hv-sh-section-title">Quick Actions</div>
               <div className="hv-sh-actions-grid">
-                <button className="hv-sh-action" onClick={async () => {
-                  setShowProfile(false)
-                  if (!twedotUser && onLogin) {
-                    const ok = await onLogin()
-                    if (!ok) return
-                  }
-                  setShowLive(true)
-                }}>
-                  <span className="hv-sh-action-icon hv-sh-icon-live">LIVE</span>
-                  <span className="hv-sh-action-label">Go Live</span>
-                </button>
                 <button className="hv-sh-action" onClick={() => {
                   const link = `${window.location.origin}?house=${ownerId}`
                   navigator.clipboard.writeText(link).then(() => {
@@ -537,7 +452,7 @@ export default function HouseView({ stats, onExit, visitUser, twedotUser, postsC
       )}
 
       {/* Bottom toolbar — only for own house, hidden during live */}
-      {isOwn && !showLive && <div className="hv-toolbar">
+      {isOwn && <div className="hv-toolbar">
         <div className="hv-toolbar-section">
           <span className="hv-section-label">House Type</span>
           <div className="hv-furn-row">
@@ -645,45 +560,6 @@ export default function HouseView({ stats, onExit, visitUser, twedotUser, postsC
         </button>
       </div>}
 
-      {/* ── Live stream overlay ──────────────────────────────── */}
-      {showLive && (
-        <LiveStreamOverlay
-          roomId={ownerId}
-          userId={ownerId}
-          ownerName={ownerName}
-          ownerAvatar={ownerAvatar ?? null}
-          followers={profileData?.followers ?? 0}
-          following={profileData?.following ?? 0}
-          posts={profileData?.posts ?? 0}
-          canvasRef={cvRef}
-          onViewerJoined={(userId, userName) => {
-            visitorsRef.current?.addVisitor(userId, userName)
-          }}
-          onViewerLeft={(userId) => {
-            visitorsRef.current?.removeVisitor(userId)
-          }}
-          onEnd={(reqs) => {
-            setShowLive(false)
-            setIsResuming(false)
-            if (reqs.length > 0) {
-              setStreamRequests(prev => [...prev, ...reqs])
-              for (const r of reqs) {
-                createPurchaseRequest(r.itemId, 'livestream').catch(() => {})
-              }
-            }
-          }}
-          inventoryItems={inventory.map(i => ({ id: i.id, name: i.title, price: `₦${i.price.toLocaleString()}`, img: i.images[0]?.image_url ?? '' }))}
-          resuming={isResuming}
-        />
-      )}
-
-      {/* ── Viewer stream overlay (watching someone else's live) ──── */}
-      {watchingLive && visitUser && (
-        <ViewerStreamOverlay
-          roomId={ownerId}
-          onLeave={() => { setWatchingLive(false); onExit() }}
-        />
-      )}
 
       {/* ── My Requests / Orders panels ────────────────────── */}
       {activePanel === 'myRequests' && (

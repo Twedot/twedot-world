@@ -1369,7 +1369,6 @@ export class CityEngine {
 
     const labels: LabelData[] = []
     for (const { def } of this._buildings) {
-      if (def.type === 'home') continue
       const topY = def.h * this._bscale + 0.3
       const top = new Vector3(def.x, topY, def.z)
       const p = Vector3.Project(top, Matrix.Identity(), tm, vp)

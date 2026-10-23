@@ -12,15 +12,12 @@ import UserDashboard from './ui/UserDashboard'
 import HouseView from './ui/HouseView'
 import RestaurantView from './ui/RestaurantView'
 import CitySearch from './ui/CitySearch'
-import LiveNowPanel from './ui/LiveNowPanel'
-import LiveStoriesStrip from './ui/LiveStoriesStrip'
 import { getMyProfile, getContentStats, openAuthPopup, silentAuthViaIframe, exchangeBridgeCode, fetchPublicBusinesses } from './api/twedotApi'
 import type { TwedotUser, TwedotBusiness } from './api/twedotApi'
 import { businessesToBuildingDefs, businessToBuildingConfig, applyBusinessClaims } from './buildings/businessMapConfig'
 import type { BuildingConfig } from './buildings/types'
 import type { CityDef } from './world/types'
 import { getRankLabel } from './api/globalRank'
-import { useLive } from './live/LiveContext'
 import './App.css'
 
 const WORLD_API    = import.meta.env.VITE_WORLD_API_URL ?? 'http://localhost:2027'
@@ -78,18 +75,14 @@ export default function App() {
   const [restaurantBizConfig, setRestaurantBizConfig] = useState<BuildingConfig | null>(null)
   const [restaurantDef, setRestaurantDef] = useState<BuildingDef | null>(null)
   const [, setDbgStatus] = useState('')
-  const { service: streamService } = useLive()
   const [twedotUser, setTwedotUser] = useState<TwedotUser | null>(null)
   const [postsCount, setPostsCount] = useState(0)
   const [bizList, setBizList] = useState<TwedotBusiness[]>([])
-  const [goLiveOpen, setGoLiveOpen] = useState(false)
-
 
   async function fetchTwedotProfile(): Promise<boolean> {
     try {
       const u = await getMyProfile()
       setTwedotUser(u)
-      if (u.id) streamService.setAuthUser(u.id)
       getContentStats()
         .then(s => setPostsCount(s.contentPublished))
         .catch(() => {})
@@ -110,18 +103,6 @@ export default function App() {
     ;(async () => {
       const params = new URLSearchParams(window.location.search)
       const bridgeCode = params.get('bridge_code')
-      const streamId = params.get('stream')
-
-      // Open stream viewer immediately — don't wait for auth to complete.
-      // Auth (fetchTwedotProfile / silentAuthViaIframe) can take 5-10s; the
-      // viewer overlay handles both auth and guest users on its own.
-      if (streamId) {
-        params.delete('stream')
-        window.history.replaceState({}, '', window.location.pathname + (params.toString() ? '?' + params : ''))
-        setVisitingUser({ id: streamId, name: 'Live User', watchingLive: true })
-        setView('house')
-      }
-
       if (bridgeCode) {
         params.delete('bridge_code')
         params.delete('bridge_failed')
@@ -215,7 +196,13 @@ export default function App() {
           el.innerHTML = `${icon}<span class="ba-name">${l.name}</span>`
           el.addEventListener('click', () => {
             const bld = cityRef.current.buildings.find(b => b.id === l.id)
-            if (bld) { setPicked(null); setHomePicked(null); setRentSign(null); setPicked(bld) }
+            if (!bld) return
+            setPicked(null); setHomePicked(null); setRentSign(null)
+            if (bld.type === 'home' && bld.ownerId) {
+              const u = usersRef.current.find(u => u.user_id === bld.ownerId)
+              if (u) { setHomePicked(backendToWorldUser(u)); return }
+            }
+            setPicked(bld)
           })
           container.appendChild(el)
           labelEls.current.set(l.id, el)
@@ -459,26 +446,6 @@ export default function App() {
             </div>
           </div>
 
-          {!loading && <LiveStoriesStrip
-            onJoin={(roomId) => {
-              setVisitingUser({ id: roomId, name: 'Live User', watchingLive: true })
-              setView('house')
-            }}
-          />}
-
-          {!loading && <LiveNowPanel
-            isLoggedIn={!!twedotUser}
-            onJoin={(roomId) => {
-              setVisitingUser({ id: roomId, name: 'Live User', watchingLive: true })
-              setView('house')
-            }}
-            onGoLive={() => {
-              setGoLiveOpen(true)
-              setHouseOpen(true)
-              setView('house')
-            }}
-          />}
-
           {!loading && (() => {
             const displayStats: MyWorldStats = myStats ?? {
               home_index: 0,
@@ -569,8 +536,7 @@ export default function App() {
         return <HouseView stats={s} visitUser={visitingUser ?? undefined}
           twedotUser={twedotUser} postsCount={postsCount}
           onLogin={handleLogin}
-          autoOpenLive={goLiveOpen}
-          onExit={() => { setHouseOpen(false); setVisitingUser(null); setGoLiveOpen(false); setView('map') }} />
+          onExit={() => { setHouseOpen(false); setVisitingUser(null); setView('map') }} />
       })()}
 
       {/* ── Business interior (claimed building) ── */}
