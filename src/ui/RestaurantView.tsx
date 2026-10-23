@@ -649,7 +649,7 @@ export default function RestaurantView({ name, bizConfig, def, onExit }: Props) 
         </div>}
 
         {/* CENTER — 3D scene + menu strip + info bar */}
-        <div className="ls-center">
+        <div className="ls-center rv-center">
           <button className="blv-exit-overlay" onClick={onExit}>&larr; City</button>
 
           {/* Mobile bottom-sheet toggle handle */}

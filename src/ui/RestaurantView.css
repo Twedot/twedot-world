@@ -455,3 +455,9 @@
   transition: color 0.15s;
 }
 .rv-info-link:hover { color: #60a5fa; text-decoration: underline; }
+
+/* ── Business view center column: push UI strips to bottom ── */
+.rv-center {
+  justify-content: flex-end !important;
+  padding-top: 0 !important;
+}

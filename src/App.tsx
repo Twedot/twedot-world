@@ -21,7 +21,7 @@ import { getRankLabel } from './api/globalRank'
 import './App.css'
 
 const WORLD_API    = import.meta.env.VITE_WORLD_API_URL ?? 'http://localhost:2027'
-const WORLD_WS     = import.meta.env.VITE_WORLD_WS_URL  ?? 'ws://localhost:2027'
+const WORLD_WS     = import.meta.env.VITE_WORLD_WS_URL  ?? 'ws://localhost:2027/ws'
 const TWEDOT_FEED    = import.meta.env.VITE_TWEDOT_FEED_URL   ?? 'https://twedot.com'
 const TWEDOT_API     = import.meta.env.DEV ? '/twedot-api' : (import.meta.env.VITE_TWEDOT_API_URL ?? 'https://prodapi.twedot.com')
 
@@ -332,7 +332,7 @@ export default function App() {
       // (done lazily per sign in SignpostRentModal; skip bulk prefetch for now)
 
       // ── WebSocket for real-time city updates ────────────────────
-      const sock = new WebSocket(`${WORLD_WS}/ws`)
+      const sock = new WebSocket(WORLD_WS)
       wsRef.current = sock
       sock.onmessage = ev => {
         try {
