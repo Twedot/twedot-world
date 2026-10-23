@@ -535,7 +535,6 @@ export default function App() {
         }
         return <HouseView stats={s} visitUser={visitingUser ?? undefined}
           twedotUser={twedotUser} postsCount={postsCount}
-          onLogin={handleLogin}
           onExit={() => { setHouseOpen(false); setVisitingUser(null); setView('map') }} />
       })()}
 

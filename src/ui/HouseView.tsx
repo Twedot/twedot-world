@@ -20,7 +20,6 @@ interface Props {
   visitUser?: WorldUser
   twedotUser?: TwedotUser | null
   postsCount?: number
-  onLogin?: () => Promise<boolean>
 }
 
 interface FurnDef { type: FurnitureType; label: string; emoji: string }
@@ -54,7 +53,7 @@ const ZONE_LABEL: Record<RoomZone, string> = {
   kitchen: 'the kitchen',
 }
 
-export default function HouseView({ stats, onExit, visitUser, twedotUser, postsCount = 0, onLogin }: Props) {
+export default function HouseView({ stats, onExit, visitUser, twedotUser, postsCount = 0 }: Props) {
   const cvRef      = useRef<HTMLCanvasElement>(null)
   const sceneRef   = useRef<HouseScene | null>(null)
   const avatarRef  = useRef<AvatarController | null>(null)
