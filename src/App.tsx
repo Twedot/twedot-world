@@ -4,12 +4,10 @@ import type { BuildingDef, WorldUser } from './world/types'
 import { BRAND_LOGOS } from './world/brandLogos'
 import lagos from './world/lagos'
 import BuildingPanel from './ui/BuildingPanel'
-import HomeProfilePanel from './ui/HomeProfilePanel'
 import SignpostRentModal from './ui/SignpostRentModal'
 import type { MyWorldStats, WalletStats } from './ui/MyDashboard'
 import UserHUD from './ui/UserHUD'
 import UserDashboard from './ui/UserDashboard'
-import HouseView from './ui/HouseView'
 import RestaurantView from './ui/RestaurantView'
 import CitySearch from './ui/CitySearch'
 import { getMyProfile, getContentStats, openAuthPopup, silentAuthViaIframe, exchangeBridgeCode, fetchPublicBusinesses } from './api/twedotApi'
@@ -62,21 +60,18 @@ export default function App() {
   const bizConfigsRef = useRef<Map<string, BuildingConfig>>(new Map())
 
   const [picked,        setPicked]        = useState<BuildingDef | null>(null)
-  const [homePicked,    setHomePicked]    = useState<WorldUser | null>(null)
   const [rentSign,      setRentSign]      = useState<{ ownerId: string } | null>(null)
   const [loadPct,       setLoadPct]       = useState<number>(-1)
   const [myStats,       setMyStats]       = useState<MyWorldStats | null>(null)
   const [walletStats,   setWalletStats]   = useState<WalletStats | null>(null)
   const [_walletLoading, setWalletLoading] = useState(false)
   const [dashOpen,      setDashOpen]      = useState(false)
-  const [houseOpen,     setHouseOpen]     = useState(false)
-  const [visitingUser, setVisitingUser]  = useState<WorldUser | null>(null)
   const [restaurantOpen, setRestaurantOpen] = useState<string | null>(null)
   const [restaurantBizConfig, setRestaurantBizConfig] = useState<BuildingConfig | null>(null)
   const [restaurantDef, setRestaurantDef] = useState<BuildingDef | null>(null)
   const [, setDbgStatus] = useState('')
   const [twedotUser, setTwedotUser] = useState<TwedotUser | null>(null)
-  const [postsCount, setPostsCount] = useState(0)
+  const [_postsCount, setPostsCount] = useState(0)
   const [bizList, setBizList] = useState<TwedotBusiness[]>([])
 
   async function fetchTwedotProfile(): Promise<boolean> {
@@ -156,20 +151,16 @@ export default function App() {
     const eng = new CityEngine(cv)
     eng.onEvent    = e => {
       if (e.type === 'pick-empty') {
-        setPicked(null); setHomePicked(null); setRentSign(null)
+        setPicked(null); setRentSign(null)
         return
       }
       if (e.type === 'pick-building') {
-        // Always dismiss any currently open panel first
-        setPicked(null); setHomePicked(null); setRentSign(null)
-        if (e.building.type === 'home' && e.building.ownerId) {
-          const u = usersRef.current.find(u => u.user_id === e.building.ownerId)
-          if (u) { setHomePicked(backendToWorldUser(u)); return }
-        }
+        setPicked(null); setRentSign(null)
+        if (e.building.type === 'home') return
         setPicked(e.building)
       }
       if (e.type === 'pick-signpost') {
-        setPicked(null); setHomePicked(null)
+        setPicked(null)
         setRentSign({ ownerId: e.ownerId })
       }
     }
@@ -196,12 +187,8 @@ export default function App() {
           el.innerHTML = `${icon}<span class="ba-name">${l.name}</span>`
           el.addEventListener('click', () => {
             const bld = cityRef.current.buildings.find(b => b.id === l.id)
-            if (!bld) return
-            setPicked(null); setHomePicked(null); setRentSign(null)
-            if (bld.type === 'home' && bld.ownerId) {
-              const u = usersRef.current.find(u => u.user_id === bld.ownerId)
-              if (u) { setHomePicked(backendToWorldUser(u)); return }
-            }
+            if (!bld || bld.type === 'home') return
+            setPicked(null); setRentSign(null)
             setPicked(bld)
           })
           container.appendChild(el)
@@ -255,8 +242,7 @@ export default function App() {
     engineRef.current = eng
     let pendingBizId = ''
     const restoreView = (view: string) => {
-      if (view === 'house') setHouseOpen(true)
-      else if (view.startsWith('business:')) {
+      if (view.startsWith('business:')) {
         // Claimed building — defer until bizConfigsRef is populated after fetch
         pendingBizId = view.slice(9)
       }
@@ -366,7 +352,7 @@ export default function App() {
   }, [])
 
   // ── Pause city engine when any interior is open ───────────────
-  const anyInteriorOpen = !!(houseOpen || visitingUser || restaurantOpen)
+  const anyInteriorOpen = !!restaurantOpen
 
   useEffect(() => {
     const eng = engineRef.current
@@ -478,7 +464,6 @@ export default function App() {
                     rank={getRankLabel(twedotUser?.global_activity_score)}
                     isLoggedIn={!!twedotUser}
                     onLogin={handleLogin}
-                    onEnterHome={() => { setDashOpen(false); setHouseOpen(true); setView('house') }}
                     onClose={() => setDashOpen(false)}
                   />
                 )}
@@ -492,22 +477,6 @@ export default function App() {
               onClose={() => setPicked(null)}
               onEnter={handleEnter}
               isLoggedIn={!!twedotUser}
-            />
-          )}
-
-          {homePicked && (
-            <HomeProfilePanel
-              user={homePicked}
-              isOwnHome={!!twedotUser && homePicked.id === myStats?.user_id}
-              isLoggedIn={!!twedotUser}
-              onLogin={handleLogin}
-              onRentSign={() => { setRentSign({ ownerId: homePicked.id }); setHomePicked(null) }}
-              onEnterHouse={() => {
-                const isOwn = !!twedotUser && homePicked.id === myStats?.user_id
-                if (isOwn) { setHouseOpen(true) } else { setVisitingUser(homePicked) }
-                setHomePicked(null); setView('house')
-              }}
-              onClose={() => setHomePicked(null)}
             />
           )}
 
@@ -526,17 +495,6 @@ export default function App() {
           })()}
         </>
       </div>
-
-      {/* ── House interior ── */}
-      {(houseOpen || visitingUser) && (() => {
-        const s = myStats ?? {
-          home_index: 0, user_id: twedotUser?.id ?? '', name: twedotUser?.name ?? 'Demo User',
-          avatar_url: twedotUser?.profile_photo_url ?? null, signpost_earnings_kobo: 0, active_rental: false,
-        }
-        return <HouseView stats={s} visitUser={visitingUser ?? undefined}
-          twedotUser={twedotUser} postsCount={postsCount}
-          onExit={() => { setHouseOpen(false); setVisitingUser(null); setView('map') }} />
-      })()}
 
       {/* ── Business interior (claimed building) ── */}
       {restaurantOpen && (

@@ -7,7 +7,6 @@ interface Props {
   walletLoading: boolean
   rank?:         string
   isLoggedIn:    boolean
-  onEnterHome:   () => void
   onLogin?:      () => void
   onClose:       () => void
 }
@@ -17,7 +16,7 @@ function fmt(n: number | undefined | null) {
   return '₦' + n.toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 }
 
-export default function UserDashboard({ stats, wallet, walletLoading, rank, isLoggedIn, onEnterHome, onLogin, onClose }: Props) {
+export default function UserDashboard({ stats, wallet, walletLoading, rank, isLoggedIn, onLogin, onClose }: Props) {
   const earnings = stats.signpost_earnings_kobo / 100
 
   return (
@@ -38,10 +37,6 @@ export default function UserDashboard({ stats, wallet, walletLoading, rank, isLo
             <div className="udash-sub">Twedot World · House #{stats.home_index + 1}</div>
           </div>
         </div>
-
-        <button className="udash-enter-btn" onClick={() => { onEnterHome(); onClose() }}>
-          🏠  Enter My House
-        </button>
 
         <div className="udash-divider" />
 
