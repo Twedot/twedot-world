@@ -335,6 +335,11 @@ export default function App() {
           if (msg.type === 'sign_rented') {
             const d = msg.data as { owner_user_id: string; image_url: string }
             eng.updateSignAd('user_' + d.owner_user_id, d.image_url)
+            // Refresh stats so signpost earnings reflect the new rental
+            fetch(`${WORLD_API}/world/me`, { credentials: 'include' })
+              .then(r => r.ok ? r.json() : null)
+              .then((s: MyWorldStats | null) => { if (s) setMyStats(s) })
+              .catch(() => {})
           }
         } catch {}
       }

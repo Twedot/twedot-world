@@ -1,5 +1,7 @@
-import { useRef, useState } from 'react'
+import { useRef, useState, useEffect } from 'react'
 import type { BuildingDef, WorldUser } from '../world/types'
+
+const PAYSTACK_PK = import.meta.env.VITE_PAYSTACK_PUBLIC_KEY ?? ''
 
 interface Props {
   building: BuildingDef
@@ -23,9 +25,18 @@ export default function SignpostRentModal({ building, owner, currentUserId, isLo
   const imgFileRef = useRef<File | null>(null)
   const [imgUrl, setImgUrl]     = useState<string | null>(null)
   const [duration, setDuration] = useState(DURATIONS[2])
-  const [step, setStep]         = useState<'form' | 'success' | 'submitting'>('form')
+  const [step, setStep]         = useState<'form' | 'paying' | 'success' | 'submitting'>('form')
   const [dragging, setDragging] = useState(false)
   const [apiError, setApiError] = useState<string | null>(null)
+
+  // Pre-load Paystack inline script
+  useEffect(() => {
+    if (document.getElementById('paystack-inline-js')) return
+    const s = document.createElement('script')
+    s.id  = 'paystack-inline-js'
+    s.src = 'https://js.paystack.co/v1/inline.js'
+    document.head.appendChild(s)
+  }, [])
 
   const isOwn    = !!currentUserId && building.ownerId === currentUserId
   const notLoggedIn = !loggedIn
@@ -45,14 +56,14 @@ export default function SignpostRentModal({ building, owner, currentUserId, isLo
     if (file) loadFile(file)
   }
 
-  const handleRent = async () => {
-    if (!imgFileRef.current || !loggedIn) return
+  const submitRent = async (paystackReference: string) => {
     setStep('submitting')
     setApiError(null)
     try {
       const form = new FormData()
-      form.append('image', imgFileRef.current)
+      form.append('image', imgFileRef.current!)
       form.append('duration_days', String(duration.days))
+      form.append('paystack_reference', paystackReference)
 
       const token = (window as unknown as Record<string, string>).__twedotToken ?? null
       const res = await fetch(`${apiUrl}/world/signpost/${building.ownerId}/rent`, {
@@ -68,10 +79,39 @@ export default function SignpostRentModal({ building, owner, currentUserId, isLo
         return
       }
       setStep('success')
-    } catch (e) {
+    } catch {
       setApiError('Network error — please try again')
       setStep('form')
     }
+  }
+
+  const handleRent = () => {
+    if (!imgFileRef.current || !loggedIn) return
+    setApiError(null)
+    setStep('paying')
+
+    const PaystackPop = (window as any).PaystackPop
+    if (!PaystackPop) {
+      setApiError('Payment service failed to load — please refresh and try again')
+      setStep('form')
+      return
+    }
+
+    const ref = 'sp_' + Date.now() + '_' + Math.random().toString(36).slice(2, 9)
+    const handler = PaystackPop.setup({
+      key:      PAYSTACK_PK,
+      email:    `${currentUserId}@twedot.app`,
+      amount:   duration.price * 100, // kobo
+      currency: 'NGN',
+      ref,
+      callback: (response: { reference: string }) => {
+        submitRent(response.reference)
+      },
+      onClose: () => {
+        setStep('form')
+      },
+    })
+    handler.openIframe()
   }
 
   return (
@@ -168,10 +208,10 @@ export default function SignpostRentModal({ building, owner, currentUserId, isLo
 
             <button
               className="sp-btn-primary"
-              disabled={!imgUrl || step === 'submitting'}
+              disabled={!imgUrl || step === 'paying' || step === 'submitting'}
               onClick={handleRent}
             >
-              {step === 'submitting' ? 'Processing…' : `Rent Now — ₦${duration.price.toLocaleString()}`}
+              {step === 'paying' ? 'Opening payment…' : step === 'submitting' ? 'Processing…' : `Rent Now — ₦${duration.price.toLocaleString()}`}
             </button>
           </>
         )}
